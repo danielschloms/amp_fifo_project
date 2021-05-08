@@ -1,4 +1,4 @@
-#include "FIFO_Lock.h"
+#include "LockQueue.h"
 #include <iostream>
 
 /**
@@ -8,7 +8,7 @@
  */
 
 // Constructor
-FIFO_Lock::FIFO_Lock(int capacity) : 
+LockQueue::LockQueue(int capacity) : 
     head(0), 
     tail(0), 
     size(capacity), 
@@ -18,10 +18,10 @@ FIFO_Lock::FIFO_Lock(int capacity) :
     }   
 
 // Destructor
-FIFO_Lock::~FIFO_Lock() { delete lock; }   
+LockQueue::~LockQueue() { delete lock; }   
 
 // Copy Constructor
-FIFO_Lock::FIFO_Lock( const FIFO_Lock & q ) : head(q.head), tail(q.tail), size(q.size), lock(new std::mutex) {
+LockQueue::LockQueue( const LockQueue & q ) : head(q.head), tail(q.tail), size(q.size), lock(new std::mutex) {
     // Copy item array
     items = std::unique_ptr<int[]>(new int[q.size]);
     for (int i = 0; i < q.size; i++){
@@ -30,7 +30,7 @@ FIFO_Lock::FIFO_Lock( const FIFO_Lock & q ) : head(q.head), tail(q.tail), size(q
 } 
 
 // Assignment Operator
-FIFO_Lock& FIFO_Lock::operator=( const FIFO_Lock & q ) {                            
+LockQueue& LockQueue::operator=( const LockQueue & q ) {                            
     head=q.head; 
     tail=q.tail;
     size=q.size;
@@ -49,7 +49,7 @@ FIFO_Lock& FIFO_Lock::operator=( const FIFO_Lock & q ) {
  * @param x The integer to enqueue
  * @returns True if operation was successful, false if queue was full
  */ 
-bool FIFO_Lock::enq(int x){
+bool LockQueue::enq(int x){
     lock->lock();
     if (tail - head == this->size){
         // Queue full, unlock and return false
@@ -69,7 +69,7 @@ bool FIFO_Lock::enq(int x){
  * @param error_code: Pointer to a location where the error code will be set
  * @returns The dequeued value
  */
-int FIFO_Lock::deq(int * error_code){
+int LockQueue::deq(int * error_code){
    lock->lock();
    if (tail == head){
         // Queue empty: unlock, set error code to -1 and return 0

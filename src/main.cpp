@@ -2,10 +2,10 @@
 #include <thread>
 #include <vector>
 #include <chrono>
-#include "FIFO_Lock.h"
+#include "LockQueue.h"
 #include "main.h"
 
-void test_queue(FIFO_Lock * q, int id){
+void test_queue(LockQueue * q, int id){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -19,6 +19,7 @@ void test_queue(FIFO_Lock * q, int id){
         else{
             std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
         }
+        // Sleep a bit so we can really see concurrent execution
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
@@ -31,13 +32,14 @@ void test_queue(FIFO_Lock * q, int id){
         else{
             std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
         }
+        // Sleep a bit so we can really see concurrent execution
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
 int main(int argc, char **argv){
     
-    FIFO_Lock q = FIFO_Lock(8);
+    LockQueue q = LockQueue(8);
     int num_threads = DEFAULT_THREADS;
 
     if (argc > 1){

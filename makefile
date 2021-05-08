@@ -6,7 +6,7 @@ TARGET_DIR = bin/
 
 all: main
 
-main: FIFO_Lock.o main.o
+main: LockQueue.o SCQ.o main.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 	rm -f *.o
 
