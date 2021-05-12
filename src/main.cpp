@@ -60,7 +60,7 @@ void test_queue(SCQ * q, int id, int elements){
     for (int i = 0; i < elements; i ++){
         int error_code;
         int ret = q->deq(&error_code);
-        if (error_code < 0){
+        if (ret == -2147483648){
             std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
         }
         else{
@@ -71,10 +71,9 @@ void test_queue(SCQ * q, int id, int elements){
 
 int main(int argc, char **argv){
     
-    //LockQueue q = LockQueue(8);
-    SCQ q = SCQ(8);
-    std::cout << "Created Queue\n";
+ 
     int num_threads = DEFAULT_THREADS;
+    int elements = 10;
 
     if (argc > 1){
         int arg_num_threads = atoi(argv[1]);
@@ -84,22 +83,42 @@ int main(int argc, char **argv){
         else{
             std::cout << "Invalid number of threads, using default." << std::endl;
         }
-    }    
+    }
+    
+    //LockQueue q = LockQueue(8);
+    SCQ q = SCQ(elements*num_threads);
+    std::cout << "Created Queue\n";
 
     std::vector<std::thread> threads;
 
     // Start time measurement
     auto start = std::chrono::system_clock::now();
 
-    // Start threads
-    for(int i = 0; i < num_threads; ++i){
+    // Start enqueue threads
+    for(int i = 0; i < num_threads; i++){
         threads.push_back(std::thread(test_enqueue, &q, i, 10));
     }
 
     // Join threads
     for(auto& thread : threads){
-        thread.join();
+        if (thread.joinable()){
+            thread.join();
+        }
     }
+
+    // Start enqueue threads
+    for(int i = 0; i < num_threads; i++){
+        threads.push_back(std::thread(test_dequeue, &q, i, 10));
+    }
+
+    // Join threads
+    for(auto& thread : threads){
+        if (thread.joinable()){
+            thread.join();
+        }
+    }
+    
+    std::cout << "Join Threads after Enqueue Test\n";
 
     // End timer
     auto end = std::chrono::system_clock::now();

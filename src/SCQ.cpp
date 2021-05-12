@@ -68,7 +68,7 @@ bool SCQ::enq(int index){
             if (threshold->load() != 3*this->size - 1){
                 threshold->store(3*this->size - 1);
             }
-            std::cout << "return true\n";
+            //std::cout << "return true\n";
             return true;
         }
     }
