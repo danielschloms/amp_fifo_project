@@ -5,6 +5,7 @@
 #include <memory>
 #include <atomic>
 #include <limits>
+#include <vector>
 
 #ifndef F_INDEX
 #define F_INDEX INT32_MIN
@@ -12,8 +13,21 @@
 
 struct Entry{
     int cycle = 0;
-    int is_safe = 0;
+    int is_safe = 1;
     int index = F_INDEX;
+
+    // Needed for atomic
+    Entry() = default;
+
+    Entry(int c, int is, int idx){
+        cycle = c;
+        is_safe = is;
+        index = idx;
+    }
+
+    // Struct must be trivially copyable for atomic
+    Entry(Entry const&) = default;
+
     // Padding for different cache line
     // Line size is 64 bytes
     int pad[14];
@@ -28,19 +42,14 @@ private:
     std::atomic<signed int> * threshold;
     std::atomic<int> * head;
     std::atomic<int> * tail;
-    std::unique_ptr<std::atomic<Entry>[]> entries;
-
-    // Needed for hacky atomic or
-    // true ... big
-    // false ... little
-    bool big_endian;
+    std::vector<std::atomic<Entry>*> entries;
 
 public:
     SCQ(int capacity);      // Constructor
     ~SCQ();                 // Destructor
     SCQ(const SCQ & scq);   // Copy Constructor
-    void enq(int index);    // Enqueue operation
-    int deq();              // Dequeue operation
+    bool enq(int index);    // Enqueue operation
+    int deq(int * error_code);              // Dequeue operation
     void catchup(int t, int h);
     int cycle(int x);
     bool is_big_endian();
