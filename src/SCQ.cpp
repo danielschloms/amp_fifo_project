@@ -23,7 +23,7 @@ SCQ::~SCQ(){};
 // Possibly add copy constructor
 
 void SCQ::catchup(int t, int h){
-    while (!tail->compare_exchange_strong(t, h)){
+    while (!tail->compare_exchange_weak(t, h)){
         h = head->load();
         t = tail->load();
         if (t >= h){
@@ -58,7 +58,7 @@ bool SCQ::enq(int index){
         ent.index == F_INDEX &&
         (ent.is_safe == 1 || head->load() <= t)){
             Entry new_entry(cycle(t), 1, index);
-            if (!entries[j]->compare_exchange_strong(ent, new_entry)){
+            if (!entries[j]->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_enq;
             }
             if (threshold->load() != 3*this->size - 1){
@@ -83,8 +83,9 @@ int SCQ::deq(int * error_code){
         Entry ent = entries[j]->load();
         if (ent.cycle == cycle(h)){
             // TODO: Is this equivalent to ORing with (0, 0, F_INDEX) ?
-            Entry or_ent = {ent.cycle, ent.is_safe, F_INDEX};
-            entries[j]->store(or_ent);
+            auto current = entries[j]->load();
+            Entry or_ent = {current.cycle, current.is_safe, F_INDEX};
+            while (!entries[j]->compare_exchange_weak(current, or_ent));
             return ent.index;
         }
         Entry new_entry = {ent.cycle, 0, ent.index};
@@ -92,7 +93,7 @@ int SCQ::deq(int * error_code){
             new_entry = {cycle(h), ent.is_safe, F_INDEX};
         }
         if (ent.cycle < cycle(h)){
-            if (!entries[j]->compare_exchange_strong(ent, new_entry)){
+            if (!entries[j]->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_deq;
             }
         }
