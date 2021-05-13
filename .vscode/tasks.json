@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Compile and run",
+                "type": "shell",
+                "command": "make; cd bin/;./main ${input:numThreads}",
+                "problemMatcher": []
+            }
+        ],
+        "inputs": [
+            {
+                "id": "numThreads",
+                "description": "Number of threads used for execution",
+                "default": "1",
+                "type": "promptString"
+            },
+        ]   
+    } 
