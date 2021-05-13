@@ -33,7 +33,7 @@ void SCQ::catchup(int t, int h){
 }
 
 int SCQ::cycle(int x){
-    return x % this->size;
+    return x / this->size;
 }
 
 bool SCQ::enq(int index){
@@ -43,7 +43,7 @@ bool SCQ::enq(int index){
     }
     //std::cout << "Try enq\n";
     while (true){
-        int t = tail->fetch_add(1);
+        int t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
         // TODO: Check if padding in Entry struct works
