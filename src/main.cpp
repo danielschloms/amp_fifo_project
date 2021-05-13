@@ -90,8 +90,8 @@ int main(int argc, char **argv){
     
  
     int num_threads = DEFAULT_THREADS;
-    int enq_cnt = 2;   //Enq_cnt per thread
-    int deq_cnt = 2;   //Deq_cnt per thread
+    int enq_cnt = 200000;   //Enq_cnt per thread
+    int deq_cnt = 200000;   //Deq_cnt per thread
 
     if (argc > 1){
         int arg_num_threads = atoi(argv[1]);
@@ -103,6 +103,9 @@ int main(int argc, char **argv){
                 std::cout << "Invalid number of threads, using default." << std::endl;
             }       
         }
+    }
+    if(USE_OPENMP){
+        num_threads = omp_get_max_threads();
     }
     
     //LockQueue q = LockQueue(8);
