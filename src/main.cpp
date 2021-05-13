@@ -15,10 +15,14 @@ void test_enqueue(SCQ * q, int id, int elements){
     for (int i = 0; i < elements; i++){
         bool success = q->enq(i);
         if (success){
-            std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
+            }        
         }
         else{
-            std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
+            }        
         }
     }
 }
@@ -33,10 +37,14 @@ void test_dequeue(SCQ * q, int id, int elements){
         int error_code;
         int ret = q->deq(&error_code);
         if (ret < 0){
-            std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
+            }        
         }
         else{
-            std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
+            }        
         }
     }
 }
@@ -50,10 +58,14 @@ void test_queue(SCQ * q, int id, int elements){
     for (int i = 0; i < elements; i ++){
         bool success = q->enq(i);
         if (success){
-            std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
+            }        
         }
         else{
-            std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
+            }        
         }
     }
 
@@ -61,10 +73,14 @@ void test_queue(SCQ * q, int id, int elements){
         int error_code;
         int ret = q->deq(&error_code);
         if (ret < 0){
-            std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
+            }        
         }
         else{
-            std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
+            if(!BENCHMARK){
+                std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
+            }    
         }
     }
 }
@@ -81,14 +97,16 @@ int main(int argc, char **argv){
             num_threads = arg_num_threads;
         }
         else{
-            std::cout << "Invalid number of threads, using default." << std::endl;
-        }
+            if(!BENCHMARK){
+                std::cout << "Invalid number of threads, using default." << std::endl;
+    }       }
     }
     
     //LockQueue q = LockQueue(8);
     SCQ q = SCQ(elements*num_threads);
-    std::cout << "Created Queue\n";
-
+    if(!BENCHMARK){//
+        std::cout << "Created Queue\n";
+    }
     std::vector<std::thread> threads;
 
     // Start time measurement
@@ -118,12 +136,20 @@ int main(int argc, char **argv){
         }
     }
     
-    std::cout << "Join Threads after Enqueue Test\n";
-
+    if(!BENCHMARK){
+        std::cout << "Join Threads after Enqueue Test\n";
+    }
     // End timer
     auto end = std::chrono::system_clock::now();
     auto elapsed = end - start;
-    std::cout << "Elapsed time: " << elapsed.count() << '\n';
+    if(!BENCHMARK){
+        std::cout << "Elapsed time: " << elapsed.count() << '\n';
+    }    
+    //Print in csv format
+    if(BENCHMARK){
+        std::cout << threads.size() << ";" << elements << ";" << elapsed.count() << std::endl;
+    }
+    
 
     return 0;
 }

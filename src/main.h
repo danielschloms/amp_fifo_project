@@ -9,4 +9,6 @@
 #define DEFAULT_THREADS 4
 #endif
 
+#define BENCHMARK false //used to supress unnecessary cout's for benchmarking
+
 #endif //MAIN_H
