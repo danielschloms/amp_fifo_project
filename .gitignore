@@ -33,3 +33,5 @@
 
 #VS Studio workspace
 *.code-workspace
+# Directories
+bin
