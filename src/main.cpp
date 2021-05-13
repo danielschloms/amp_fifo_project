@@ -89,7 +89,8 @@ int main(int argc, char **argv){
     
  
     int num_threads = DEFAULT_THREADS;
-    int elements = 10000000;
+    int enq_cnt = 100000;   //Enq_cnt per thread
+    int deq_cnt = 100000;   //Deq_cnt per thread
 
     if (argc > 1){
         int arg_num_threads = atoi(argv[1]);
@@ -104,7 +105,7 @@ int main(int argc, char **argv){
     }
     
     //LockQueue q = LockQueue(8);
-    LockQueue q = LockQueue(elements*num_threads);
+    LockQueue q = LockQueue(enq_cnt*num_threads);
     if(!BENCHMARK){//
         std::cout << "Created Queue\n";
     }
@@ -115,12 +116,12 @@ int main(int argc, char **argv){
 
     // Start enqueue threads
     for(int i = 0; i < num_threads; i++){
-        threads.push_back(std::thread(test_enqueue, &q, i, elements));
+        threads.push_back(std::thread(test_enqueue, &q, i, enq_cnt));
     }
 
     // Start dequeue threads
     for(int i = 0; i < num_threads; i++){
-        threads.push_back(std::thread(test_dequeue, &q, i, 10));
+        threads.push_back(std::thread(test_dequeue, &q, i, deq_cnt));
     }
 
     // Join threads
@@ -136,14 +137,14 @@ int main(int argc, char **argv){
     // End timer
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
     if(!BENCHMARK){
-        std::cout << "Elapsed time: " << elapsed << '\n';
+        std::cout << "Elapsed time: " << elapsed << "ms" << '\n';
     }    
 
     
     else{
         //Print in csv format
-        //Benchmark format: Num_threads;Num_elements;Time
-        std::cout << threads.size() << ";" << elements << ";" << elapsed << std::endl;
+        //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Time[ms]
+        std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << elapsed << std::endl;
     }
     
 
