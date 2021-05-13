@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -g -fPIE -fopenmp --std=c++11 -Wall -pthread
+CFLAGS = -g --std=c++11 -Wall -pthread
 LDFLAGS = -latomic
 SRC_DIR = src/
 TARGET_DIR = bin/

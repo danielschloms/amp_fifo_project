@@ -12,7 +12,7 @@ void test_enqueue(SCQ * q, int id, int elements){
     // Don't use actual thread ID, just use the thread's index
     int my_id = id;
 
-    for (int i = 5; i < elements; i ++){
+    for (int i = 0; i < elements; i++){
         bool success = q->enq(i);
         if (success){
             std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
@@ -32,7 +32,7 @@ void test_dequeue(SCQ * q, int id, int elements){
     for (int i = 0; i < elements; i ++){
         int error_code;
         int ret = q->deq(&error_code);
-        if (error_code < 0){
+        if (ret < 0){
             std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
         }
         else{
@@ -60,7 +60,7 @@ void test_queue(SCQ * q, int id, int elements){
     for (int i = 0; i < elements; i ++){
         int error_code;
         int ret = q->deq(&error_code);
-        if (ret == -2147483648){
+        if (ret < 0){
             std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
         }
         else{
@@ -96,7 +96,7 @@ int main(int argc, char **argv){
 
     // Start enqueue threads
     for(int i = 0; i < num_threads; i++){
-        threads.push_back(std::thread(test_enqueue, &q, i, 10));
+        threads.push_back(std::thread(test_enqueue, &q, i, elements));
     }
 
     // Join threads
@@ -106,7 +106,7 @@ int main(int argc, char **argv){
         }
     }
 
-    // Start enqueue threads
+    // Start dequeue threads
     for(int i = 0; i < num_threads; i++){
         threads.push_back(std::thread(test_dequeue, &q, i, 10));
     }
