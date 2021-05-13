@@ -2,7 +2,7 @@
 #define MAIN_H
 
 #ifndef MAX_THREADS
-#define MAX_THREADS 16
+#define MAX_THREADS 1024
 #endif
 
 #ifndef DEFAULT_THREADS
@@ -10,5 +10,7 @@
 #endif
 
 #define BENCHMARK false //used to supress unnecessary cout's for benchmarking
+
+#define USE_OPENMP true 
 
 #endif //MAIN_H
