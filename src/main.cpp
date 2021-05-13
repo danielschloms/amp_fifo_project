@@ -3,10 +3,10 @@
 #include <vector>
 #include <chrono>
 #include "LockQueue.h"
-#include "SCQ.h"
+#include "LockQueue.h"
 #include "main.h"
 
-void test_enqueue(SCQ * q, int id, int elements){
+void test_enqueue(LockQueue * q, int id, int elements){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -27,7 +27,7 @@ void test_enqueue(SCQ * q, int id, int elements){
     }
 }
 
-void test_dequeue(SCQ * q, int id, int elements){
+void test_dequeue(LockQueue * q, int id, int elements){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -49,7 +49,7 @@ void test_dequeue(SCQ * q, int id, int elements){
     }
 }
 
-void test_queue(SCQ * q, int id, int elements){
+void test_queue(LockQueue * q, int id, int elements){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -89,7 +89,7 @@ int main(int argc, char **argv){
     
  
     int num_threads = DEFAULT_THREADS;
-    int elements = 10;
+    int elements = 10000000;
 
     if (argc > 1){
         int arg_num_threads = atoi(argv[1]);
@@ -99,11 +99,12 @@ int main(int argc, char **argv){
         else{
             if(!BENCHMARK){
                 std::cout << "Invalid number of threads, using default." << std::endl;
-    }       }
+            }       
+        }
     }
     
     //LockQueue q = LockQueue(8);
-    SCQ q = SCQ(elements*num_threads);
+    LockQueue q = LockQueue(elements*num_threads);
     if(!BENCHMARK){//
         std::cout << "Created Queue\n";
     }
@@ -115,13 +116,6 @@ int main(int argc, char **argv){
     // Start enqueue threads
     for(int i = 0; i < num_threads; i++){
         threads.push_back(std::thread(test_enqueue, &q, i, elements));
-    }
-
-    // Join threads
-    for(auto& thread : threads){
-        if (thread.joinable()){
-            thread.join();
-        }
     }
 
     // Start dequeue threads
@@ -140,14 +134,16 @@ int main(int argc, char **argv){
         std::cout << "Join Threads after Enqueue Test\n";
     }
     // End timer
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = end - start;
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
     if(!BENCHMARK){
-        std::cout << "Elapsed time: " << elapsed.count() << '\n';
+        std::cout << "Elapsed time: " << elapsed << '\n';
     }    
-    //Print in csv format
-    if(BENCHMARK){
-        std::cout << threads.size() << ";" << elements << ";" << elapsed.count() << std::endl;
+
+    
+    else{
+        //Print in csv format
+        //Benchmark format: Num_threads;Num_elements;Time
+        std::cout << threads.size() << ";" << elements << ";" << elapsed << std::endl;
     }
     
 
