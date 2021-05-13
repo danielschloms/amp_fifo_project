@@ -12,12 +12,7 @@ SCQ::SCQ(int capacity) :
     tail(new std::atomic<int>(2*capacity)),
     threshold(new std::atomic<int>(-1))
 {
-    items = std::unique_ptr<int*[]>(new int*[capacity]);
-    Entry init_ent = {0, 1, F_INDEX};
-    //std::atomic<Entry> init_ent_a(init_ent);
-    //entries = std::unique_ptr<std::atomic<Entry>*[]>(new std::atomic<Entry>*[2*capacity]);
     for (size_t i = 0; i < 2*capacity; i++){
-        //std::cout << "Try store init entry\n";
         entries.push_back(new std::atomic<Entry>);
     }
     // TODO: Are the entries initialized properly?
@@ -53,11 +48,12 @@ bool SCQ::enq(int index){
         // j = cache_remap(T % (2*n))
         // TODO: Check if padding in Entry struct works
         int j = t % (2*this->size);
+
         // Pseudocode in the paper uses goto, so I do as well
         entry_load_enq:
-        //std::cout << "Try load entry at addr " << &entries[j] << std::endl;
+
         Entry ent = entries[j]->load();
-        //std::cout << "Loaded entry\n";
+
         if (ent.cycle < cycle(t) && 
         ent.index == F_INDEX &&
         (ent.is_safe == 1 || head->load() <= t)){
@@ -68,7 +64,6 @@ bool SCQ::enq(int index){
             if (threshold->load() != 3*this->size - 1){
                 threshold->store(3*this->size - 1);
             }
-            //std::cout << "return true\n";
             return true;
         }
     }

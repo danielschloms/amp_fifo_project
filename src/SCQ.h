@@ -35,9 +35,6 @@ struct Entry{
 
 class SCQ{
 private:
-    std::queue<int> aq;                             // Indices of allocated entries
-    std::queue<int> fq;                             // Indices of unallocated entries
-    std::unique_ptr<int*[]> items;                  // Array of pointers
     int size;
     std::atomic<signed int> * threshold;
     std::atomic<int> * head;

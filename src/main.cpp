@@ -12,7 +12,7 @@ void test_enqueue(SCQ * q, int id, int elements){
     // Don't use actual thread ID, just use the thread's index
     int my_id = id;
 
-    for (int i = 0; i < elements; i ++){
+    for (int i = 5; i < elements; i ++){
         bool success = q->enq(i);
         if (success){
             std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
