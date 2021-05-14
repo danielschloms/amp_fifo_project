@@ -43,7 +43,7 @@ private:
     std::vector<std::atomic<Entry>*> entries;
 
 public:
-    SCQ(int capacity);      // Constructor
+    SCQ(int capacity); // Constructor
     ~SCQ();                 // Destructor
     SCQ(const SCQ & scq);   // Copy Constructor
     bool enq(int index) override;    // Enqueue operation

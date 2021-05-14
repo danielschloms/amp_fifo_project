@@ -20,8 +20,8 @@ private:
     std::mutex * lock;
     
 public:
-    LockQueue(int capacity);                    // Constructor
-    LockQueue(const LockQueue & q);             // Copy Constructor
+    LockQueue(int capacity);                   // Constructor
+    LockQueue(const LockQueue & q);           // Copy Constructor
     ~LockQueue();                               // Destructor
     LockQueue& operator=(const LockQueue & q);  // Assignment Operator
 

@@ -8,7 +8,7 @@
  */
 
 // Constructor
-LockQueue::LockQueue(int capacity) : 
+LockQueue::LockQueue(int capacity) : Queue(),
     head(0), 
     tail(0), 
     size(capacity), 
@@ -21,7 +21,7 @@ LockQueue::LockQueue(int capacity) :
 LockQueue::~LockQueue() { delete lock; }   
 
 // Copy Constructor
-LockQueue::LockQueue( const LockQueue & q ) : head(q.head), tail(q.tail), size(q.size), lock(new std::mutex) {
+LockQueue::LockQueue( const LockQueue & q ) : Queue(), head(q.head), tail(q.tail), size(q.size), lock(new std::mutex) {
     // Copy item array
     items = std::unique_ptr<int[]>(new int[q.size]);
     for (int i = 0; i < q.size; i++){

@@ -4,7 +4,8 @@
 #include <chrono>
 #include <omp.h>
 #include "LockQueue.h"
-#include "LockQueue.h"
+#include "SCQ.h"
+#include "Queue.h"
 #include "main.h"
 
 void test_enqueue(Queue * q, int id, int enq_cnt){
@@ -88,13 +89,22 @@ void test_queue(Queue * q, int id, int elements){
 
 int main(int argc, char **argv){
     
+    /**
+     * Usage: program_name [Queue Type [Num. of threads]]
+     */
  
     int num_threads = DEFAULT_THREADS;
-    int enq_cnt = 200000;   //Enq_cnt per thread
-    int deq_cnt = 200000;   //Deq_cnt per thread
+    int enq_cnt = 10;   //Enq_cnt per thread
+    int deq_cnt = 10;   //Deq_cnt per thread
+   
+    int q_type = 0; // 0 ... Lock, otherwise ... SCQ
 
     if (argc > 1){
-        int arg_num_threads = atoi(argv[1]);
+        int q_type = atoi(argv[1]);
+    }
+    if (argc > 2){
+        int arg_num_threads = atoi(argv[2]);
+        std::cout << "num threads: " << arg_num_threads << std::endl;
         if (arg_num_threads > 0 && arg_num_threads <= MAX_THREADS){
             num_threads = arg_num_threads;
         }
@@ -104,12 +114,24 @@ int main(int argc, char **argv){
             }       
         }
     }
+    
     if(USE_OPENMP){
         num_threads = omp_get_max_threads();
     }
     
     //LockQueue q = LockQueue(8);
-    Queue q = LockQueue(enq_cnt*num_threads);
+    LockQueue lq(enq_cnt*num_threads);
+    SCQ scq(enq_cnt*num_threads);
+
+    Queue * q;
+
+    if (q_type == 0){
+        q = &lq;
+    }
+    else{
+        q = &scq;
+    }
+     
     if(!BENCHMARK){//
         std::cout << "Created Queue\n";
     }   
@@ -122,14 +144,14 @@ int main(int argc, char **argv){
     // Start enqueue threads
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
-            threads.push_back(std::thread(test_enqueue, &q, i, enq_cnt));
+            threads.push_back(std::thread(test_enqueue, q, i, enq_cnt));
         }
     }
     else{
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            test_enqueue(&q, id, enq_cnt);
+            test_enqueue(q, id, enq_cnt);
         }
     }
     //End Time
@@ -142,14 +164,14 @@ int main(int argc, char **argv){
     // Start dequeue threads
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
-            threads.push_back(std::thread(test_dequeue, &q, i, deq_cnt));
+            threads.push_back(std::thread(test_dequeue, q, i, deq_cnt));
         }
     }
     else{
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            test_dequeue(&q, id, enq_cnt);
+            test_dequeue(q, id, enq_cnt);
         }
     }
     // End timer
