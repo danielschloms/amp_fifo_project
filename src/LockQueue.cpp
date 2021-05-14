@@ -56,7 +56,7 @@ bool LockQueue::enq(int index){
         lock->unlock();
         return false;
     }
-    items[tail % this->size] = x;
+    items[tail % this->size] = index;
     this->tail ++;
     // Enqueue successful, unlock and return true
     lock->unlock();
@@ -77,10 +77,10 @@ int LockQueue::deq(int * error_code){
         *error_code = -1;
         return 0;
    }
-   int x = items[head % this->size];
+   int index = items[head % this->size];
    head ++;
    // Dequeue successful: unlock, set error code to 0 and return the value
    lock->unlock();
    *error_code = 0;
-   return x;
+   return index;
 }

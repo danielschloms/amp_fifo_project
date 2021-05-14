@@ -167,9 +167,6 @@ int main(int argc, char **argv){
         }
     }
     
-    
-    
-    
     if(!BENCHMARK){
         std::cout << "Enq Time: " << time_enq << "ms" << "\nDeq Time: " << time_deq << "ms" << "Total Time: " << time_enq + time_deq << "ms\n";
     }    
