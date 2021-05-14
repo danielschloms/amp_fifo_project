@@ -6,6 +6,7 @@
 #include <atomic>
 #include <limits>
 #include <vector>
+#include "Queue.h"
 
 #ifndef F_INDEX
 #define F_INDEX INT32_MIN
@@ -33,7 +34,7 @@ struct Entry{
     int pad[14];
 };
 
-class SCQ{
+class SCQ : public Queue{
 private:
     int size;
     std::atomic<signed int> * threshold;
@@ -45,8 +46,8 @@ public:
     SCQ(int capacity);      // Constructor
     ~SCQ();                 // Destructor
     SCQ(const SCQ & scq);   // Copy Constructor
-    bool enq(int index);    // Enqueue operation
-    int deq(int * error_code);              // Dequeue operation
+    bool enq(int index) override;    // Enqueue operation
+    int deq(int * error_code) override;              // Dequeue operation
     void catchup(int t, int h);
     int cycle(int x);
     bool is_big_endian();

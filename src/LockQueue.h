@@ -7,8 +7,9 @@
 
 #include <memory>       // For unique pointers
 #include <mutex>        // C++ locks
+#include "Queue.h"
 
-class LockQueue{
+class LockQueue : public Queue {
 private:
     int head;
     int tail;
@@ -24,8 +25,8 @@ public:
     ~LockQueue();                               // Destructor
     LockQueue& operator=(const LockQueue & q);  // Assignment Operator
 
-    bool enq(int x);                            // Enqueue operation
-    int deq(int * error_code);                  // Dequeue operation
+    bool enq(int index) override;                            // Enqueue operation
+    int deq(int * error_code) override;                  // Dequeue operation
 
 };
 

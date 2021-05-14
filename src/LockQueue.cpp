@@ -49,7 +49,7 @@ LockQueue& LockQueue::operator=( const LockQueue & q ) {
  * @param x The integer to enqueue
  * @returns True if operation was successful, false if queue was full
  */ 
-bool LockQueue::enq(int x){
+bool LockQueue::enq(int index){
     lock->lock();
     if (tail - head == this->size){
         // Queue full, unlock and return false
