@@ -120,7 +120,6 @@ int main(int argc, char **argv){
     auto start = std::chrono::system_clock::now();
 
     // Start enqueue threads
-    
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
             threads.push_back(std::thread(test_enqueue, &q, i, enq_cnt));
@@ -133,9 +132,14 @@ int main(int argc, char **argv){
             test_enqueue(&q, id, enq_cnt);
         }
     }
+    //End Time
+    auto time_enq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
+
+
+    // Start time measurement
+    start = std::chrono::system_clock::now();
 
     // Start dequeue threads
-    
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
             threads.push_back(std::thread(test_dequeue, &q, i, deq_cnt));
@@ -148,7 +152,8 @@ int main(int argc, char **argv){
             test_dequeue(&q, id, enq_cnt);
         }
     }
-
+    // End timer
+    auto time_deq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
 
     if(!USE_OPENMP){
         // Join threads
@@ -164,17 +169,14 @@ int main(int argc, char **argv){
     
     
     
-    // End timer
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
-    if(!BENCHMARK){
-        std::cout << "Elapsed time: " << elapsed << "ms" << '\n';
-    }    
-
     
+    if(!BENCHMARK){
+        std::cout << "Enq Time: " << time_enq << "ms" << "\nDeq Time: " << time_deq << "ms" << "Total Time: " << time_enq + time_deq << "ms\n";
+    }    
     else{
         //Print in csv format
-        //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Time[ms]
-        std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << elapsed << std::endl;
+        //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
+        std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
     }
     
 
