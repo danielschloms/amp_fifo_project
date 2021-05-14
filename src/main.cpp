@@ -7,7 +7,7 @@
 #include "LockQueue.h"
 #include "main.h"
 
-void test_enqueue(LockQueue * q, int id, int enq_cnt){
+void test_enqueue(Queue * q, int id, int enq_cnt){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -28,7 +28,7 @@ void test_enqueue(LockQueue * q, int id, int enq_cnt){
     }
 }
 
-void test_dequeue(LockQueue * q, int id, int deq_cnt){
+void test_dequeue(Queue * q, int id, int deq_cnt){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -50,7 +50,7 @@ void test_dequeue(LockQueue * q, int id, int deq_cnt){
     }
 }
 
-void test_queue(LockQueue * q, int id, int elements){
+void test_queue(Queue * q, int id, int elements){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
     // Don't use actual thread ID, just use the thread's index
@@ -109,7 +109,7 @@ int main(int argc, char **argv){
     }
     
     //LockQueue q = LockQueue(8);
-    LockQueue q = LockQueue(enq_cnt*num_threads);
+    Queue q = LockQueue(enq_cnt*num_threads);
     if(!BENCHMARK){//
         std::cout << "Created Queue\n";
     }   
