@@ -156,9 +156,11 @@ int main(int argc, char **argv){
         for(int i = 0; i < enq_threads.size(); i++){
             if (enq_threads[i].joinable()){
                 enq_threads[i].join();
-                std::cout << "Join enq: " << i << std::endl;
             }
         }
+        // Wait for Dequeuers to consume all entries
+        //scq.is_empty = false;
+        //while(!scq.is_empty){};
         terminate_deq = true;
         std::cout << "TERMINATE DEQ\n";
         for(int i = 0; i < deq_threads.size(); i++){
@@ -186,6 +188,15 @@ int main(int argc, char **argv){
     std::cout << "Successful dequeue operations: " << deq_succ_count.load() << std::endl;
     std::cout << "Unsuccessful dequeue operations: " << deq_unsucc_count.load() << std::endl;
     std::cout << "-----------------------------------------------\n";
+
+    int nonempty_cnt = 0;
+    for (size_t i = 0; i < 2*q_elements; i++){
+        if (!scq.entry_empty(i)){
+            //scq.print_entry(i);
+            nonempty_cnt++;
+        }
+    }
+    std::cout << "Nonempty: " << nonempty_cnt << std::endl;
 
     return 0;
 }

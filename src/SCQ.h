@@ -14,9 +14,9 @@
 //#endif
 
 struct Entry{
-    int cycle = 0;
-    int is_safe = 1;
-    int index = 2047;
+    int cycle;
+    int is_safe;
+    int index;
 
     // Needed for atomic
     Entry() = default;
@@ -28,7 +28,7 @@ struct Entry{
     }
 
     // Struct must be trivially copyable for atomic
-    Entry(Entry const&) = default;
+    Entry(Entry const& e) = default;
 
     // Padding for different cache line
     // Line size is 64 bytes
@@ -54,6 +54,8 @@ public:
     int cycle(int x);
     bool is_big_endian();
     void print_entry(int j);
+    bool entry_empty(int j);
+    bool is_empty;
 };
 
 #endif //SCQ_H
