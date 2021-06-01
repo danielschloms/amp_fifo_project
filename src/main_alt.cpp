@@ -22,6 +22,7 @@ void enq_loop(Queue * q, int id){
     int my_id = id;
 
     while (!terminate_enq){
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         bool success = q->enq(my_id);
         if (success){
             enq_succ_count++;
@@ -42,13 +43,15 @@ void enq_loop(Queue * q, int id){
 void deq_loop(Queue * q, int id){
     int my_id = id;
     while (!terminate_deq){
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         int error_code;
         int ret = q->deq(&error_code);
-        if (ret < 0 || error_code < 0){
+        if (error_code < 0){
             deq_unsucc_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
             }        
+            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else{
             deq_succ_count.fetch_add(1);
@@ -112,6 +115,8 @@ int main(int argc, char **argv){
         std::cout << "Created Queue\n";
     }   
     
+    std::vector<std::thread> enq_threads;
+    std::vector<std::thread> deq_threads;
     std::vector<std::thread> threads;
 
     // Start time measurement
@@ -122,11 +127,11 @@ int main(int argc, char **argv){
 
         // Half of threads are enqueuers, half dequeuers
         // Enqueuers first, because they have to be terminated first so they don't get stuck
-        for(int i = 0; i < num_threads / 2; ++i){
-            threads.push_back(std::thread(enq_loop, q, i));
+        for(int i = 0; i < num_threads / 2; i++){
+            enq_threads.push_back(std::thread(enq_loop, q, i));
         }
-        for(int i = num_threads / 2; i < num_threads; ++i){
-            threads.push_back(std::thread(deq_loop, q, i));
+        for(int i = 0; i < num_threads / 2; i++){
+            deq_threads.push_back(std::thread(deq_loop, q, (num_threads/2)+i));
         }
     }
     else{
@@ -148,18 +153,17 @@ int main(int argc, char **argv){
         }
         terminate_enq = true;
         std::cout << "TERMINATE ENQ\n";
-        terminate_deq = true;
-        for(int i = 0; i < num_threads / 2; ++i){
-            if (threads[i].joinable()){
-                threads[i].join();
+        for(int i = 0; i < enq_threads.size(); i++){
+            if (enq_threads[i].joinable()){
+                enq_threads[i].join();
                 std::cout << "Join enq: " << i << std::endl;
             }
         }
         terminate_deq = true;
         std::cout << "TERMINATE DEQ\n";
-        for(int i = num_threads / 2; i < num_threads; ++i){
-            if (threads[i].joinable()){
-                threads[i].join();
+        for(int i = 0; i < deq_threads.size(); i++){
+            if (deq_threads[i].joinable()){
+                deq_threads[i].join();
             }
         }
     }
@@ -171,16 +175,17 @@ int main(int argc, char **argv){
         //Print in csv format
         //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
         //std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
-        std::cout << "Threads: " << num_threads << std::endl;
-        std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
-        std::cout << "Running time before joining threads: " << time << " seconds\n";
-        std::cout << "Successful enqueue operations: " << enq_succ_count.load() << std::endl;
-        std::cout << "Unuccessful enqueue operations: " << enq_unsucc_count.load() << std::endl;
-        std::cout << "Successful dequeue operations: " << deq_succ_count.load() << std::endl;
-        std::cout << "Unsuccessful dequeue operations: " << deq_unsucc_count.load() << std::endl;
-        std::cout << "-----------------------------------------------\n";
+        
     }
     
+    std::cout << "Threads: " << num_threads << std::endl;
+    std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
+    std::cout << "Running time before joining threads: " << time << " seconds\n";
+    std::cout << "Successful enqueue operations: " << enq_succ_count.load() << std::endl;
+    std::cout << "Unuccessful enqueue operations: " << enq_unsucc_count.load() << std::endl;
+    std::cout << "Successful dequeue operations: " << deq_succ_count.load() << std::endl;
+    std::cout << "Unsuccessful dequeue operations: " << deq_unsucc_count.load() << std::endl;
+    std::cout << "-----------------------------------------------\n";
 
     return 0;
 }

@@ -6,16 +6,17 @@
 #include <atomic>
 #include <limits>
 #include <vector>
+#include <cstddef>
 #include "Queue.h"
 
-#ifndef F_INDEX
-#define F_INDEX INT32_MIN
-#endif
+//#ifndef F_INDEX
+//#define F_INDEX 2048
+//#endif
 
 struct Entry{
     int cycle = 0;
     int is_safe = 1;
-    int index = F_INDEX;
+    int index = 2047;
 
     // Needed for atomic
     Entry() = default;
@@ -37,20 +38,22 @@ struct Entry{
 class SCQ : public Queue{
 private:
     int size;
-    std::atomic<signed int> * threshold;
-    std::atomic<int> * head;
-    std::atomic<int> * tail;
+    int F_INDEX;
+    std::atomic<int> * threshold;
+    std::atomic<size_t> * head;
+    std::atomic<size_t> * tail;
     std::vector<std::atomic<Entry>*> entries;
 
 public:
-    SCQ(int capacity); // Constructor
-    ~SCQ();                 // Destructor
-    SCQ(const SCQ & scq);   // Copy Constructor
-    bool enq(int index) override;    // Enqueue operation
-    int deq(int * error_code) override;              // Dequeue operation
-    void catchup(int t, int h);
+    SCQ(int capacity);                  // Constructor
+    ~SCQ();                             // Destructor
+    SCQ(const SCQ & scq);               // Copy Constructor
+    bool enq(int index) override;       // Enqueue operation
+    int deq(int * error_code) override; // Dequeue operation
+    void catchup(size_t t, size_t h);
     int cycle(int x);
     bool is_big_endian();
+    void print_entry(int j);
 };
 
 #endif //SCQ_H

@@ -93,11 +93,11 @@ int main(int argc, char **argv){
      * Usage: program_name [Queue Type [Num. of threads]]
      */
  
-    int num_threads = DEFAULT_THREADS;
-    int enq_cnt = 10;   //Enq_cnt per thread
-    int deq_cnt = 10;   //Deq_cnt per thread
+    int num_threads = 1;//DEFAULT_THREADS;
+    int enq_cnt = 1024;   //Enq_cnt per thread
+    int deq_cnt = 1024;   //Deq_cnt per thread
    
-    int q_type = 0; // 0 ... Lock, otherwise ... SCQ
+    int q_type = 1; // 0 ... Lock, otherwise ... SCQ
 
     if (argc > 1){
         int q_type = atoi(argv[1]);
@@ -120,8 +120,8 @@ int main(int argc, char **argv){
     }
     
     //LockQueue q = LockQueue(8);
-    LockQueue lq(enq_cnt*num_threads);
-    SCQ scq(enq_cnt*num_threads);
+    LockQueue lq(1024);
+    SCQ scq(1024);
 
     Queue * q;
 
@@ -157,6 +157,12 @@ int main(int argc, char **argv){
     //End Time
     auto time_enq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
 
+    for(int i = 0; i < threads.size(); i++){
+            if (threads[i].joinable()){
+                threads[i].join();
+                //std::cout << "Join enq: " << i << std::endl;
+            }
+    }
 
     // Start time measurement
     start = std::chrono::system_clock::now();
@@ -174,6 +180,12 @@ int main(int argc, char **argv){
             test_dequeue(q, id, enq_cnt);
         }
     }
+    for(int i = 0; i < threads.size(); i++){
+            if (threads[i].joinable()){
+                threads[i].join();
+                //std::cout << "Join enq: " << i << std::endl;
+            }
+    }
     // End timer
     auto time_deq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
 
@@ -182,6 +194,30 @@ int main(int argc, char **argv){
         if(!BENCHMARK){
             std::cout << "Join Threads after Enqueue Test\n";
         }
+        for(auto& thread : threads){
+            if (thread.joinable()){
+                thread.join();
+            }
+        }
+    }
+
+    for (int i = 0; i < 100; i++){
+        // enq again
+        for(int i = 0; i < num_threads; i++){
+                threads.push_back(std::thread(test_enqueue, q, i, enq_cnt));
+        }
+    
+        for(auto& thread : threads){
+            if (thread.joinable()){
+                thread.join();
+            }
+        }
+    
+        // deq again
+        for(int i = 0; i < num_threads; i++){
+                threads.push_back(std::thread(test_dequeue, q, i, deq_cnt));
+        }
+    
         for(auto& thread : threads){
             if (thread.joinable()){
                 thread.join();

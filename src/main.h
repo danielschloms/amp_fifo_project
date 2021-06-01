@@ -11,6 +11,6 @@
 
 #define BENCHMARK true //used to supress unnecessary cout's for benchmarking
 
-#define USE_OPENMP true 
+#define USE_OPENMP false 
 
 #endif //MAIN_H
