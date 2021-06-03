@@ -25,13 +25,13 @@ void enq_loop(Queue * q, int id){
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         bool success = q->enq(my_id);
         if (success){
-            enq_succ_count++;
+            enq_succ_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Successfully enqueued " << my_id << std::endl;
             }        
         }
         else{
-            enq_unsucc_count++;
+            enq_unsucc_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << my_id << std::endl;
             }        
@@ -72,7 +72,7 @@ int main(int argc, char **argv){
     int time = 10;  // in secs
    
     int q_type = 0; // 0 ... Lock, otherwise ... SCQ
-    size_t q_elements = 1024;
+    size_t q_elements = 8;
 
     if (argc > 1){
         q_type = atoi(argv[1]);

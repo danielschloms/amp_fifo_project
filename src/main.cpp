@@ -8,6 +8,11 @@
 #include "Queue.h"
 #include "main.h"
 
+std::atomic<size_t> enq_succ_count(0);
+std::atomic<size_t> enq_unsucc_count(0);
+std::atomic<size_t> deq_succ_count(0);
+std::atomic<size_t> deq_unsucc_count(0);
+
 void test_enqueue(Queue * q, int id, int enq_cnt){
     // Thread ID
     // std::thread::id my_id = std::this_thread::get_id();
@@ -15,13 +20,15 @@ void test_enqueue(Queue * q, int id, int enq_cnt){
     int my_id = id;
 
     for (int i = 0; i < enq_cnt; i++){
-        bool success = q->enq(i);
+        bool success = q->enq((i + 1) * id);
         if (success){
+            enq_succ_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
             }        
         }
         else{
+            enq_unsucc_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
             }        
@@ -38,12 +45,14 @@ void test_dequeue(Queue * q, int id, int deq_cnt){
     for (int i = 0; i < deq_cnt; i ++){
         int error_code;
         int ret = q->deq(&error_code);
-        if (ret < 0){
+        if (error_code < 0){
+            deq_unsucc_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
             }        
         }
         else{
+            deq_succ_count.fetch_add(1);
             if(!BENCHMARK){
                 std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
             }        
@@ -92,10 +101,10 @@ int main(int argc, char **argv){
     /**
      * Usage: program_name [Queue Type [Num. of threads]]
      */
- 
     int num_threads = 1;//DEFAULT_THREADS;
-    int enq_cnt = 1024;   //Enq_cnt per thread
-    int deq_cnt = 1024;   //Deq_cnt per thread
+    int enq_cnt = 16;   //Enq_cnt per thread
+    int deq_cnt = 30;   //Deq_cnt per thread
+    size_t q_elements = 8;
    
     int q_type = 1; // 0 ... Lock, otherwise ... SCQ
 
@@ -120,8 +129,8 @@ int main(int argc, char **argv){
     }
     
     //LockQueue q = LockQueue(8);
-    LockQueue lq(1024);
-    SCQ scq(1024);
+    LockQueue lq(q_elements);
+    SCQ scq(q_elements);
 
     Queue * q;
 
@@ -144,14 +153,19 @@ int main(int argc, char **argv){
     // Start enqueue threads
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
-            threads.push_back(std::thread(test_enqueue, q, i, enq_cnt));
+            //Enqueue count per thread. If not divisible, then last thread is responsible for remaining enqueues
+            auto enq_cnt_thread = i == num_threads - 1 ? enq_cnt/num_threads + enq_cnt % num_threads : enq_cnt/num_threads; 
+            threads.push_back(std::thread(test_enqueue, q, i, enq_cnt_thread));
         }
     }
     else{
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            test_enqueue(q, id, enq_cnt);
+            //Dequeue count per thread. If not divisible, then last thread is responsible for remaining dequeues
+            auto enq_cnt_thread = id == num_threads - 1 ? enq_cnt/num_threads + enq_cnt % num_threads : enq_cnt/num_threads; 
+            
+            test_enqueue(q, id, enq_cnt_thread);
         }
     }
     //End Time
@@ -170,14 +184,16 @@ int main(int argc, char **argv){
     // Start dequeue threads
     if(!USE_OPENMP){
         for(int i = 0; i < num_threads; i++){
-            threads.push_back(std::thread(test_dequeue, q, i, deq_cnt));
+            auto deq_cnt_thread = i == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads;
+            threads.push_back(std::thread(test_dequeue, q, i, deq_cnt_thread));
         }
     }
     else{
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            test_dequeue(q, id, enq_cnt);
+            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+            test_dequeue(q, id, deq_cnt_thread);
         }
     }
     for(int i = 0; i < threads.size(); i++){
@@ -201,32 +217,17 @@ int main(int argc, char **argv){
         }
     }
 
-    for (int i = 0; i < 100; i++){
-        // enq again
-        for(int i = 0; i < num_threads; i++){
-                threads.push_back(std::thread(test_enqueue, q, i, enq_cnt));
-        }
-    
-        for(auto& thread : threads){
-            if (thread.joinable()){
-                thread.join();
-            }
-        }
-    
-        // deq again
-        for(int i = 0; i < num_threads; i++){
-                threads.push_back(std::thread(test_dequeue, q, i, deq_cnt));
-        }
-    
-        for(auto& thread : threads){
-            if (thread.joinable()){
-                thread.join();
-            }
-        }
-    }
-    
+   
     if(!BENCHMARK){
         std::cout << "Enq Time: " << time_enq << "ms" << "\nDeq Time: " << time_deq << "ms" << "Total Time: " << time_enq + time_deq << "ms\n";
+        std::cout << "Threads: " << num_threads << std::endl;
+        std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
+        std::cout << "Running time before joining threads: " << time << " seconds\n";
+        std::cout << "Successful enqueue operations: " << enq_succ_count.load() << std::endl;
+        std::cout << "Unuccessful enqueue operations: " << enq_unsucc_count.load() << std::endl;
+        std::cout << "Successful dequeue operations: " << deq_succ_count.load() << std::endl;
+        std::cout << "Unsuccessful dequeue operations: " << deq_unsucc_count.load() << std::endl;
+        std::cout << "-----------------------------------------------\n";
     }    
     else{
         //Print in csv format
