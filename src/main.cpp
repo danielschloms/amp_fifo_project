@@ -5,6 +5,7 @@
 #include <omp.h>
 #include "LockQueue.h"
 #include "SCQ.h"
+#include "NCQ.h"
 #include "Queue.h"
 #include "main.h"
 
@@ -24,7 +25,7 @@ void test_enqueue(Queue * q, int id, int enq_cnt){
         if (success){
             enq_succ_count.fetch_add(1);
             if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
+                std::cout << "Thread " << my_id << ": Successfully enqueued " << (i + 1) * id << std::endl;
             }        
         }
         else{
@@ -102,8 +103,8 @@ int main(int argc, char **argv){
      * Usage: program_name [Queue Type [Num. of threads]]
      */
     int num_threads = 1;//DEFAULT_THREADS;
-    int enq_cnt = 16;   //Enq_cnt per thread
-    int deq_cnt = 30;   //Deq_cnt per thread
+    int enq_cnt = 9;   //Enq_cnt per thread
+    int deq_cnt = 8;   //Deq_cnt per thread
     size_t q_elements = 8;
    
     int q_type = 1; // 0 ... Lock, otherwise ... SCQ
@@ -131,14 +132,17 @@ int main(int argc, char **argv){
     //LockQueue q = LockQueue(8);
     LockQueue lq(q_elements);
     SCQ scq(q_elements);
+    NCQ ncq(q_elements);
 
     Queue * q;
-
     if (q_type == 0){
         q = &lq;
     }
-    else{
+    else if(q_type == 1){
         q = &scq;
+    }
+    else{
+        q = &ncq;
     }
      
     if(!BENCHMARK){//
@@ -159,12 +163,11 @@ int main(int argc, char **argv){
         }
     }
     else{
-        #pragma omp parallel 
+        #pragma omp parallel
         {
             int id = omp_get_thread_num();
             //Dequeue count per thread. If not divisible, then last thread is responsible for remaining dequeues
             auto enq_cnt_thread = id == num_threads - 1 ? enq_cnt/num_threads + enq_cnt % num_threads : enq_cnt/num_threads; 
-            
             test_enqueue(q, id, enq_cnt_thread);
         }
     }
