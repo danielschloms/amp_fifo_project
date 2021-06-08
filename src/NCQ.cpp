@@ -61,6 +61,11 @@ bool NCQ::enq(int index){
     size_t j;
     Entry_NCQ ent;
     Entry_NCQ new_entry;
+    
+    //std::cout << "Tail: " << tail->load() << " Head: " << head->load() << " Size: " << this->size << std::endl;
+    if(tail->load() - head->load() == this->size){
+        return false;
+    }
     do
     {
         retry:;
