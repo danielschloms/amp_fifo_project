@@ -10,7 +10,7 @@ all: main main_alt
 main_alt: LockQueue.o SCQ.o main_alt.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
-main: LockQueue.o SCQ.o main.o
+main: LockQueue.o NCQ.o SCQ.o main.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
 %.o: $(SRC_DIR)%.cpp $(SRC_DIR)%.h
