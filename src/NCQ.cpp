@@ -10,17 +10,34 @@
 NCQ::NCQ(int capacity) : 
     size(capacity),
     head(new std::atomic<size_t>(capacity)),
-    tail(new std::atomic<size_t>(capacity)),
-    F_INDEX(2*capacity - 1)
+    tail(new std::atomic<size_t>(capacity))
 {
-    this->threshold = (std::atomic<int>*)malloc(sizeof(std::atomic<int>));
-    this->threshold->store(-1);
     Entry_NCQ init_entry = {0, 0};
-    for (size_t i = 0; i < 2*capacity; i++){
+    for (size_t i = 0; i < capacity; i++){
         entries.push_back(new std::atomic<Entry_NCQ>(init_entry));
     }
-    
-    // TODO: Are the entries initialized properly?
+    std::cout << "Capacity: " << capacity << std::endl;
+}
+
+NCQ::NCQ(int capacity, bool empty) : 
+    size(capacity)
+{   
+    if(!empty){
+        head = new std::atomic<size_t>(capacity);
+        tail = new std::atomic<size_t>(capacity);
+    }
+    else{
+        head = new std::atomic<size_t>(0);
+        tail = new std::atomic<size_t>(capacity);
+    }
+    Entry_NCQ init_entry = {0, 0};
+    for (size_t i = 0; i < capacity; i++){
+        if(!empty){
+            init_entry = {0, i};
+        }
+        entries.push_back(new std::atomic<Entry_NCQ>(init_entry));
+    }
+    std::cout << "Capacity: " << capacity << std::endl;
 }
 
 NCQ::~NCQ(){};

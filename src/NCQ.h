@@ -9,9 +9,6 @@
 #include <cstddef>
 #include "Queue.h"
 
-//#ifndef F_INDEX
-//#define F_INDEX 2048
-//#endif
 
 struct Entry_NCQ{
     int cycle;
@@ -36,14 +33,13 @@ struct Entry_NCQ{
 class NCQ : public Queue{
 private:
     int size;
-    int F_INDEX;
-    std::atomic<int> * threshold;
     std::atomic<size_t> * head;
     std::atomic<size_t> * tail;
     std::vector<std::atomic<Entry_NCQ>*> entries;
 
 public:
     NCQ(int capacity);                  // Constructor
+    NCQ(int capacity, bool empty);                  // Constructor
     ~NCQ();                             // Destructor
     NCQ(const NCQ & ncq);               // Copy Constructor
     bool enq(int index) override;       // Enqueue operation
