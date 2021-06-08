@@ -103,7 +103,7 @@ int main(int argc, char **argv){
      * Usage: program_name [Queue Type [Num. of threads]]
      */
     int num_threads = 1;//DEFAULT_THREADS;
-    int enq_cnt = 9;   //Enq_cnt per thread
+    int enq_cnt = 16;   //Enq_cnt per thread
     int deq_cnt = 8;   //Deq_cnt per thread
     size_t q_elements = 8;
    
@@ -132,9 +132,10 @@ int main(int argc, char **argv){
     //LockQueue q = LockQueue(8);
     LockQueue lq(q_elements);
     SCQ scq(q_elements);
-    NCQ ncq(q_elements);
+    NCQ ncq(q_elements, false);
 
     Queue * q;
+
     if (q_type == 0){
         q = &lq;
     }
@@ -146,7 +147,22 @@ int main(int argc, char **argv){
     }
      
     if(!BENCHMARK){//
-        std::cout << "Created Queue\n";
+        std::string queue;
+        switch (q_type)
+        {
+            case 0:
+                queue =  "Lock ";
+                break;
+            case 1:
+                queue = "SCQ ";
+                break;
+            case 2: 
+                queue = "NCQ ";
+                break;
+            default:
+                break;
+        }
+        std::cout << "Created " << queue << "Queue\n";
     }   
     
     std::vector<std::thread> threads;
@@ -169,6 +185,7 @@ int main(int argc, char **argv){
             //Dequeue count per thread. If not divisible, then last thread is responsible for remaining dequeues
             auto enq_cnt_thread = id == num_threads - 1 ? enq_cnt/num_threads + enq_cnt % num_threads : enq_cnt/num_threads; 
             test_enqueue(q, id, enq_cnt_thread);
+            
         }
     }
     //End Time

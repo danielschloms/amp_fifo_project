@@ -9,8 +9,8 @@
 #define DEFAULT_THREADS 4
 #endif
 
-#define BENCHMARK true //used to supress unnecessary cout's for benchmarking
+#define BENCHMARK false //used to supress unnecessary cout's for benchmarking
 
-#define USE_OPENMP false 
+#define USE_OPENMP true 
 
 #endif //MAIN_H
