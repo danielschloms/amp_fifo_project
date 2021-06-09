@@ -32,7 +32,7 @@ struct Entry{
 
     // Padding for different cache line
     // Line size is 64 bytes
-    int pad[14];
+    char pad[52];
 };
 
 class SCQ : public Queue{

@@ -28,16 +28,16 @@ void enq_loop(Queue * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t ca
         if (success){
             //enq_succ_count.fetch_add(1);
             ctr_succ[id*cache_offset]++;
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully enqueued " << my_id << std::endl;
-            }        
+            //if(!BENCHMARK){
+            //    std::cout << "Thread " << my_id << ": Successfully enqueued " << my_id << std::endl;
+            //}        
         }
         else{
             //enq_unsucc_count.fetch_add(1);
             ctr_unsucc[id*cache_offset]++;
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << my_id << std::endl;
-            }        
+            //if(!BENCHMARK){
+            //    std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << my_id << std::endl;
+            //}        
         }
     }
     finished_enqueuers.fetch_add(1);
@@ -52,17 +52,17 @@ void deq_loop(Queue * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t ca
         if (error_code < 0){
             //deq_unsucc_count.fetch_add(1);
             ctr_unsucc[id*cache_offset]++;
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
-            }        
+            //if(!BENCHMARK){
+            //    std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
+            //}        
             //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else{
             //deq_succ_count.fetch_add(1);
             ctr_succ[id*cache_offset]++;
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
-            }    
+            //if(!BENCHMARK){
+            //    std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
+            //}    
         }
     }
 }
@@ -74,9 +74,9 @@ int main(int argc, char **argv){
      */
  
     int num_threads = 21;
-    int time = 3;  // in secs
-    int num_deq = 10;
-    int num_enq = 10;
+    int time = 10;  // in secs
+    int num_deq = 15;
+    int num_enq = 15;
 
     // Cache line size 64 byte
     size_t cache_offset = 64 / sizeof(size_t);
@@ -88,7 +88,7 @@ int main(int argc, char **argv){
     int q_type = 1; // 0 ... Lock, otherwise ... SCQ
     size_t q_elements = 8;
 
-    if (argc > 1){
+    /*if (argc > 1){
         q_type = atoi(argv[1]);
     }
     if (argc > 2){
@@ -104,7 +104,7 @@ int main(int argc, char **argv){
     }
     if (argc > 3){
         time = atoi(argv[3]);
-    }
+    }*/
     
     if(USE_OPENMP){
         num_threads = omp_get_max_threads();
@@ -161,7 +161,7 @@ int main(int argc, char **argv){
                 q->kill();
                 std::cout << "Time over\n";
                 // Wait until enqueuers are returned, otherwise they can get stuck
-                while (finished_enqueuers.load() < num_enq);
+                //while (finished_enqueuers.load() < num_enq);
                 terminate_deq = true;
             }
         }
@@ -197,38 +197,34 @@ int main(int argc, char **argv){
         cuml_deq_unsucc += ctr_unsucc[i*cache_offset];
     }
 
-    std::cout << "Enq Succ: " << cuml_enq_succ << std::endl;
-    std::cout << "Enq Unsucc: " << cuml_enq_unsucc << std::endl;
-    std::cout << "Deq Succ: " << cuml_deq_succ << std::endl;
-    std::cout << "Deq Unsucc: " << cuml_deq_unsucc << std::endl;
-    std::cout << "-----------------------" << std::endl;
+    
 
     if(!BENCHMARK){
-        //std::cout << "Enq Time: " << time_enq << "ms" << "\nDeq Time: " << time_deq << "ms" << "Total Time: " << time_enq + time_deq << "ms\n";
-    }    
-    else{
-        //Print in csv format
-        //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
-        //std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
-    }
-    
-    std::cout << "Threads: " << num_threads << std::endl;
-    std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
-    std::cout << "Running time before joining threads: " << time << " seconds\n";
-    std::cout << "Successful enqueue operations: " << enq_succ_count.load() << std::endl;
-    std::cout << "Unuccessful enqueue operations: " << enq_unsucc_count.load() << std::endl;
-    std::cout << "Successful dequeue operations: " << deq_succ_count.load() << std::endl;
-    std::cout << "Unsuccessful dequeue operations: " << deq_unsucc_count.load() << std::endl;
-    std::cout << "-----------------------------------------------\n";
+        std::cout << "Threads: " << num_threads << std::endl;
+        std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
+        std::cout << "Running time before joining threads: " << time << " seconds\n";
+        std::cout << "Enq Succ: " << cuml_enq_succ << std::endl;
+        std::cout << "Enq Unsucc: " << cuml_enq_unsucc << std::endl;
+        std::cout << "Deq Succ: " << cuml_deq_succ << std::endl;
+        std::cout << "Deq Unsucc: " << cuml_deq_unsucc << std::endl;
+        std::cout << "-----------------------" << std::endl;
 
-    int nonempty_cnt = 0;
-    for (size_t i = 0; i < 2*q_elements; i++){
+        int nonempty_cnt = 0;
+        for (size_t i = 0; i < 2*q_elements; i++){
         if (!scq.entry_empty(i)){
             //scq.print_entry(i);
             nonempty_cnt++;
         }
     }
     std::cout << "Nonempty: " << nonempty_cnt << std::endl;
+    }    
+    else{
+        //Print in csv format
+        //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
+        //std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
+    }
+
+    
 
     return 0;
 }
