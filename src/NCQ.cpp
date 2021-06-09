@@ -52,6 +52,10 @@ void NCQ::print_entry(int j){
     std::cout << "----------------------------------------\n";
 }
 
+void NCQ::kill(){
+    
+}
+
 int NCQ::cycle(int x){
     return (x / (this->size));
 }

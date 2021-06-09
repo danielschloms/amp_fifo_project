@@ -48,6 +48,7 @@ public:
     void print_entry(int j);
     bool entry_empty(int j);
     bool is_empty;
+    void kill();
 };
 
 #endif //NCQ_H
