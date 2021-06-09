@@ -84,3 +84,7 @@ int LockQueue::deq(int * error_code){
    *error_code = 0;
    return index;
 }
+
+void LockQueue::kill(){
+    
+}

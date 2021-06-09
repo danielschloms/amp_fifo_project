@@ -28,6 +28,8 @@ public:
     bool enq(int index) override;                            // Enqueue operation
     int deq(int * error_code) override;                  // Dequeue operation
 
+    void kill();
+
 };
 
 #endif //LockQueue_H

@@ -54,6 +54,10 @@ int SCQ::cycle(int x){
     return (x / (this->size));
 }
 
+void SCQ::kill(){
+    run = false;
+}
+
 bool SCQ::enq(int index){
     /*
     if (index == F_INDEX){
@@ -62,7 +66,7 @@ bool SCQ::enq(int index){
     }
     */
 
-    while (true){
+    while (run){
         if (cycle(tail->load()+1) > 1 + cycle(head->load())) continue;
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing

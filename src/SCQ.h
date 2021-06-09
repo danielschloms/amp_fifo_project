@@ -43,6 +43,7 @@ private:
     std::atomic<size_t> * head;
     std::atomic<size_t> * tail;
     std::vector<std::atomic<Entry>*> entries;
+    bool run = true;
 
 public:
     SCQ(int capacity);                  // Constructor
@@ -56,6 +57,7 @@ public:
     void print_entry(int j);
     bool entry_empty(int j);
     bool is_empty;
+    void kill();
 };
 
 #endif //SCQ_H
