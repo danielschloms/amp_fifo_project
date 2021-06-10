@@ -7,7 +7,7 @@ TARGET_DIR = bin/
 all: main main_alt
 	rm -f *.o
 
-main_alt: LockQueue.o SCQ.o main_alt.o
+main_alt: DoubleLockQueue.o LockQueue.o NCQ.o SCQ.o main_alt.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
 main: LockQueue.o NCQ.o SCQ.o main.o
