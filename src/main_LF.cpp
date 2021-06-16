@@ -61,9 +61,12 @@ int main(int argc, char **argv){
     
     FIFO q(q_elements);
 
-
+    //q.enq(100);
+    //int ec;
+    //q.deq(&ec);
     //std::cout << q.enq(100) << std::endl;
 
+    
     #pragma omp parallel num_threads(num_enq + num_deq + 1)
     {
         int id = omp_get_thread_num();

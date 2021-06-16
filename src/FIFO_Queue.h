@@ -2,7 +2,7 @@
 #define FIFO_QUEUE_H
 
 // Frontend for the SCQ
-#include "SCQ.h"
+#include "SCQ_bit.h"
 
 class FIFO{
     

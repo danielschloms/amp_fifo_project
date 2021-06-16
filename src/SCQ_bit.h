@@ -28,7 +28,7 @@ private:
     std::vector<Entry> entries_lli;
 
 public:
-    SCQ(int capacity);                  // Constructor
+    SCQ(int capacity, bool full);                  // Constructor
     ~SCQ();                             // Destructor
     SCQ(const SCQ & scq);               // Copy Constructor
     bool enq(uint64_t index);       // Enqueue operation

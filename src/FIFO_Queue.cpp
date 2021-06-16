@@ -17,6 +17,9 @@ int FIFO::deq(int *error_code){
         *error_code = -1;
         return 0;
     }
+    //if (index >= size){
+    //    printf("Error\n");
+    //}
     val = data[index];
     fq->enq(index);
     return val;

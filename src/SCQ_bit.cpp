@@ -7,16 +7,27 @@
 #include <atomic>
 #include <cstddef>
 
-SCQ::SCQ(int capacity) : 
-    size(capacity),
-    head(new std::atomic<size_t>(2*capacity)),
-    tail(new std::atomic<size_t>(2*capacity)),
-    threshold(new std::atomic<int>(-1)),
-    F_INDEX(2*capacity - 1)
-{
+SCQ::SCQ(int capacity, bool full){
+    this->threshold = (std::atomic<int>*)malloc(sizeof(std::atomic<int>));
+    this->head = (std::atomic<size_t>*)malloc(sizeof(std::atomic<size_t>));
+    this->tail = (std::atomic<size_t>*)malloc(sizeof(std::atomic<size_t>));
+    F_INDEX = 2*capacity - 1;
+    //std::cout << "FINDEX: " << F_INDEX << std::endl;
+    size = capacity;
+    if (full){
+        this->threshold->store(3*capacity-1);
+        this->head->store(0);
+        this->tail->store(2*capacity);
+    }
+    else{
+        this->threshold->store(-1);
+        this->head->store(2*capacity);
+        this->tail->store(2*capacity);
+    }
+    //std::cout << "Here\n";
     for (size_t i = 0; i < 2*capacity; i++){
         Entry e;
-        e.entr = new std::atomic<uint64_t>;
+        e.entr = new std::atomic<uint64_t>(0);
         e.entr->fetch_or(2*size - 1);
         for (size_t i = 0; i < 16; i++)
         {
@@ -25,7 +36,7 @@ SCQ::SCQ(int capacity) :
         
         entries_lli.push_back(e);
     }
-    
+    //std::cout << "Here2\n";
     // TODO: Are the entries initialized properly?
 }
 
@@ -67,7 +78,7 @@ bool SCQ::enq(uint64_t index){
     size_t loop_cnt_2 = 0;
     while (true){
         //printf("asdf\n");
-        loop_cnt++;
+        //loop_cnt++;
         //loop_cnt_2++;
         //uint64_t tc = cycle(tail->load()+1);
         //uint64_t hc = cycle(head->load());
@@ -99,24 +110,25 @@ bool SCQ::enq(uint64_t index){
             
             return true;
         }
-        else if (loop_cnt > 10000000){
-            std::cout << "Issue with Entry " << j << std::endl;
-            uint64_t issue_ent = entries_lli[j].entr->load();
-            uint64_t issue_cycle = issue_ent >> (size - 1);
-            uint64_t issue_issafe = issue_ent & size;
-            uint64_t issue_index = issue_ent & (size - 1);
-            std::cout << "Cycle: " << issue_cycle << std::endl;
-            std::cout << "IsSafe: " << issue_issafe << std::endl;
-            std::cout << "Index: " << issue_index << std::endl;
-            std::cout << "Threshold: " << threshold->load() << std::endl;
-            std::cout << "----------------------------------------\n";
-            loop_cnt = 0;
-        }
+        //else if (loop_cnt > 10000000){
+        //    std::cout << "Issue with Entry " << j << std::endl;
+        //    uint64_t issue_ent = entries_lli[j].entr->load();
+        //    uint64_t issue_cycle = issue_ent >> (size - 1);
+        //    uint64_t issue_issafe = issue_ent & size;
+        //    uint64_t issue_index = issue_ent & (size - 1);
+        //    std::cout << "Cycle: " << issue_cycle << std::endl;
+        //    std::cout << "IsSafe: " << issue_issafe << std::endl;
+        //    std::cout << "Index: " << issue_index << std::endl;
+        //    std::cout << "Threshold: " << threshold->load() << std::endl;
+        //    std::cout << "----------------------------------------\n";
+        //    loop_cnt = 0;
+        //}
     }
 }
 
 int SCQ::deq(int * error_code){
     // Checks if queue is empty
+    F_INDEX = 2*size-1;
     uint64_t zero = 0;
     *error_code = 1;
     if (threshold->load() < 0){
@@ -128,18 +140,26 @@ int SCQ::deq(int * error_code){
     while (true){
         size_t h = head->fetch_add(1);
         size_t j = h % (size);
-
+        //printf("deq run\n");
         
         uint64_t ent = entries_lli[j].entr->load();
         entry_load_deq:
         uint64_t ent_cycle = ent | (2*size - 1);
+        //std::cout << ent << std::endl;
         uint64_t h_cycle = (h << 1) | (2*size - 1);
 
         if (ent_cycle == h_cycle){
             uint64_t current = entries_lli[j].entr->load();
             entries_lli[j].entr->fetch_or(size - 1);
+            //printf("Succ deq\n");
             return ent & (size - 1);
         }
+        //else{
+            //std::cout << "F index " << F_INDEX << std::endl;
+            //std::cout << "ent cycle " << ent_cycle << std::endl;
+            //std::cout << "h cycle " << h_cycle << std::endl;
+            //std::cout << "\n";
+        //}
 
         // Cycle(ent), 0, Index(Ent)
         uint64_t new_ent = ent & (~size);
@@ -159,12 +179,14 @@ int SCQ::deq(int * error_code){
             catchup(t, h+1);
             threshold->fetch_sub(1);
             *error_code = -1;
+            //std::cout << "t: " << t << "h+1: "<< h+1<<std::endl;
             return ~zero;
         }
 
         if (threshold->fetch_sub(1) <= 0){
             *error_code = -1;
             is_empty = true;
+            //std::cout << "threshold"<<std::endl;
             return ~zero;
         }
     }
