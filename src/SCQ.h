@@ -46,7 +46,7 @@ private:
     bool run = true;
 
 public:
-    SCQ(int capacity);                  // Constructor
+    SCQ(int capacity, bool full);       // Constructor
     ~SCQ();                             // Destructor
     SCQ(const SCQ & scq);               // Copy Constructor
     bool enq(int index) override;       // Enqueue operation

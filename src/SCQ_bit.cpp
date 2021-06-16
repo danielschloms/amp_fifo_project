@@ -43,6 +43,10 @@ void SCQ::catchup(size_t t, size_t h){
     }
 }
 
+void SCQ::kill(){
+    run = false;
+}
+
 int SCQ::cycle(int x){
     return x / (size);
 }
@@ -64,14 +68,10 @@ bool SCQ::enq(uint64_t index){
     while (true){
         //printf("asdf\n");
         loop_cnt++;
-        loop_cnt_2++;
-        uint64_t tc = cycle(tail->load()+1);
-        uint64_t hc = cycle(head->load());
-        if (loop_cnt_2 > 10000000){
-            printf("What\n");
-            loop_cnt_2 = 0;
-        }
-        if (tc > 1 + hc) continue;
+        //loop_cnt_2++;
+        //uint64_t tc = cycle(tail->load()+1);
+        //uint64_t hc = cycle(head->load());
+        //if (tc > 1 + hc) continue;
 
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
@@ -79,8 +79,6 @@ bool SCQ::enq(uint64_t index){
         // TODO: Check if padding in Entry struct works
         size_t j = t % (size);
 
-        
-        
         uint64_t ent = entries_lli[j].entr->load();
         entry_load_enq:
         // Pseudocode in the paper uses goto, so I do as well
@@ -119,11 +117,12 @@ bool SCQ::enq(uint64_t index){
 
 int SCQ::deq(int * error_code){
     // Checks if queue is empty
+    uint64_t zero = 0;
     *error_code = 1;
     if (threshold->load() < 0){
         *error_code = -1;
         is_empty = true;
-        return ~0;
+        return ~zero;
     }
 
     while (true){
@@ -160,13 +159,13 @@ int SCQ::deq(int * error_code){
             catchup(t, h+1);
             threshold->fetch_sub(1);
             *error_code = -1;
-            return ~0;
+            return ~zero;
         }
 
         if (threshold->fetch_sub(1) <= 0){
             *error_code = -1;
             is_empty = true;
-            return ~0;
+            return ~zero;
         }
     }
 }
