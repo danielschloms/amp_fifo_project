@@ -50,7 +50,7 @@ int main(int argc, char **argv){
     size_t *ctr_succ = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
     size_t *ctr_unsucc = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
 
-    size_t q_elements = 1024;
+    size_t q_elements = 4096;
 
     num_threads = omp_get_max_threads();
     
