@@ -4,6 +4,8 @@
 #include <chrono>
 #include <omp.h>
 #include "LockQueue.h"
+#include "DoubleLockQueue.h"
+#include "NCQ.h"
 #include "SCQ.h"
 #include "Queue.h"
 #include "main_alt.h"
@@ -113,14 +115,22 @@ int main(int argc, char **argv){
     //LockQueue q = LockQueue(8);
     LockQueue lq(q_elements);
     SCQ scq(q_elements);
+    NCQ ncq(q_elements);
+    DoubleLockQueue dlq(q_elements);
 
     Queue * q;
-
+    q_type = 3;
     if (q_type == 0){
         q = &lq;
     }
-    else{
+    else if(q_type == 1){
         q = &scq;
+    }
+    else if(q_type == 2){
+        q = &ncq;
+    }
+    else if(q_type == 3){
+        q = &dlq;
     }
 
     std::vector<std::thread> enq_threads;
@@ -200,8 +210,27 @@ int main(int argc, char **argv){
     
 
     if(!BENCHMARK){
+        std::string queue;
+        switch (q_type)
+        {
+            case 0:
+                queue =  "Lock ";
+                break;
+            case 1:
+                queue = "SCQ ";
+                break;
+            case 2: 
+                queue = "NCQ ";
+                break;
+            case 3: 
+                queue = "Double Lock ";
+                break;
+            default:
+                break;
+        }
+
         std::cout << "Threads: " << num_threads << std::endl;
-        std::cout << "Queue type: " << (q_type == 0 ? "Locking queue" : "Lock-free queue") << std::endl;
+        std::cout << "Queue type: " << queue << "queue" << std::endl;
         std::cout << "Running time before joining threads: " << time << " seconds\n";
         std::cout << "Enq Succ: " << cuml_enq_succ << std::endl;
         std::cout << "Enq Unsucc: " << cuml_enq_unsucc << std::endl;
