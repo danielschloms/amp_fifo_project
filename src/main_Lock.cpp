@@ -95,7 +95,7 @@ int main(int argc, char **argv){
 
     if(!BENCHMARK){
         std::cout << "Threads: " << num_threads << std::endl;
-        std::cout << "Queue type: Lock-Free Queue" << std::endl;
+        std::cout << "Queue type: Locking Queue" << std::endl;
         std::cout << "Running time before joining threads: " << time << " seconds\n";
         std::cout << "Enq Succ: " << cuml_enq_succ << std::endl;
         std::cout << "Enq Unsucc: " << cuml_enq_unsucc << std::endl;
