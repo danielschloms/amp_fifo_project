@@ -31,6 +31,9 @@ SCQ::SCQ(int capacity, bool full){
         if (!full){
             e.entr->fetch_or(2*size - 1);
         }
+        else{
+            e.entr->fetch_or(2*size >> 1);
+        }
         for (size_t i = 0; i < 16; i++)
         {
             e.pad[i] = i;
@@ -73,7 +76,6 @@ bool SCQ::enq(uint64_t index){
     size_t loop_cnt = 0;
     size_t loop_cnt_2 = 0;
     while (true){
-        printf("enql\n");
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
