@@ -1,0 +1,3 @@
+#define LOCK_QUEUE 0
+#define DOUBLE_LOCK_QUEUE 1
+#define Q_TYPE DOUBLE_LOCK_QUEUE
