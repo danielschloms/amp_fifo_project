@@ -27,8 +27,13 @@ SCQ::SCQ(int capacity, bool full){
     //std::cout << "Here\n";
     for (size_t i = 0; i < 2*capacity; i++){
         Entry e;
-        e.entr = new std::atomic<uint64_t>(0);
-        e.entr->fetch_or(2*size - 1);
+        e.entr = new std::atomic<uint64_t>(i);
+        if (!full){
+            e.entr->fetch_or(2*size - 1);
+        }
+        else{
+            e.entr->fetch_or(2*size >> 1);
+        }
         for (size_t i = 0; i < 16; i++)
         {
             e.pad[i] = i;
@@ -67,27 +72,13 @@ bool SCQ::entry_empty(int j){
 }
 
 bool SCQ::enq(uint64_t index){
-    /*
-    if (index == F_INDEX){
-        std::cout << "Value can't be magic number" << std::endl;
-        return false;
-    }
-    */
     index ^= (size - 1);
     size_t loop_cnt = 0;
     size_t loop_cnt_2 = 0;
     while (true){
-        //printf("asdf\n");
-        //loop_cnt++;
-        //loop_cnt_2++;
-        //uint64_t tc = cycle(tail->load()+1);
-        //uint64_t hc = cycle(head->load());
-        //if (tc > 1 + hc) continue;
-
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
-        // TODO: Check if padding in Entry struct works
         size_t j = t % (size);
 
         uint64_t ent = entries_lli[j].entr->load();
@@ -126,13 +117,11 @@ bool SCQ::enq(uint64_t index){
     }
 }
 
-int SCQ::deq(int * error_code){
+int SCQ::deq(){
     // Checks if queue is empty
     F_INDEX = 2*size-1;
     uint64_t zero = 0;
-    *error_code = 1;
     if (threshold->load() < 0){
-        *error_code = -1;
         is_empty = true;
         return ~zero;
     }
@@ -140,8 +129,7 @@ int SCQ::deq(int * error_code){
     while (true){
         size_t h = head->fetch_add(1);
         size_t j = h % (size);
-        //printf("deq run\n");
-        
+        //printf("run\n");
         uint64_t ent = entries_lli[j].entr->load();
         entry_load_deq:
         uint64_t ent_cycle = ent | (2*size - 1);
@@ -178,13 +166,11 @@ int SCQ::deq(int * error_code){
         if (t <= h + 1){
             catchup(t, h+1);
             threshold->fetch_sub(1);
-            *error_code = -1;
             //std::cout << "t: " << t << "h+1: "<< h+1<<std::endl;
             return ~zero;
         }
 
         if (threshold->fetch_sub(1) <= 0){
-            *error_code = -1;
             is_empty = true;
             //std::cout << "threshold"<<std::endl;
             return ~zero;
