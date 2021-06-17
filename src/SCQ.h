@@ -35,7 +35,7 @@ struct Entry{
     char pad[52];
 };
 
-class SCQ : public Queue{
+class SCQ{
 private:
     int size;
     int F_INDEX;
@@ -49,8 +49,8 @@ public:
     SCQ(int capacity, bool full);       // Constructor
     ~SCQ();                             // Destructor
     SCQ(const SCQ & scq);               // Copy Constructor
-    bool enq(int index) override;       // Enqueue operation
-    int deq(int * error_code) override; // Dequeue operation
+    bool enq(int index);                // Enqueue operation
+    int deq();                          // Dequeue operation
     void catchup(size_t t, size_t h);
     int cycle(int x);
     bool is_big_endian();

@@ -53,6 +53,7 @@ int main(int argc, char **argv){
     size_t q_elements = 4096;
 
     num_threads = omp_get_max_threads();
+    std::cout << num_threads << std::endl;
     
     LockQueue q(q_elements);
 

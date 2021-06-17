@@ -9,32 +9,21 @@ FIFO::FIFO(int capacity){
 }
 
 int FIFO::deq(int *error_code){
-    int ec;
-    int val;
-    int zero = 0;
-    int index = aq->deq(&ec);
-    if (index == ~zero) {
+    int index = aq->deq();
+    if (index == -1) {
         *error_code = -1;
         return 0;
     }
-    //if (index >= size){
-    //    printf("Error\n");
-    //}
-    val = data[index];
+    int val = data[index];
     fq->enq(index);
     return val;
 }
 
 bool FIFO::enq(int x){
-    int ec;
-    int index = fq->deq(&ec);
-    //std::cout << index << std::endl;
-    int zero = 0;
-
-    if (index == ~zero) {
+    int index = fq->deq();
+    if (index == -1) {
         return false;
     }
-
     data[index] = x;
     aq->enq(index);
     return true;

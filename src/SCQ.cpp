@@ -70,17 +70,8 @@ void SCQ::kill(){
 bool SCQ::enq(int index){
     // Strange memory bug?
     F_INDEX = 2*size-1;
-    //std::cout << "FINDEX: " << F_INDEX << std::endl;
-    /*
-    if (index == F_INDEX){
-        std::cout << "Value can't be magic number" << std::endl;
-        return false;
-    }
-    */
 
-    while (run){
-        //if (cycle(tail->load()+1) > 1 + cycle(head->load())) continue;
-        //std::cout << "run\n";
+    while (true){
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
@@ -103,75 +94,48 @@ bool SCQ::enq(int index){
             }
             return true;
         }
-        //else{
-        //    std::cout << "Ent cycle " << ent.cycle << std::endl;
-        //    std::cout << "T cycle " << cycle(t) << std::endl;
-        //    std::cout << "ent index " << ent.index << std::endl;
-        //    std::cout << "ent issafe" << ent.is_safe << std::endl;
-        //    std::cout << "head " << head->load() << std::endl;
-        //    std::cout << "tail " << t << std::endl;
-        //    std::cout << "f index " << F_INDEX << std::endl;
-        //    return false;
-        //}
     }
 }
 
-int SCQ::deq(int * error_code){
+int SCQ::deq(){
     // Checks if queue is empty
-    int zero = 0;
-    *error_code = 1;
     if (this->threshold->load() < 0){
-        *error_code = -1;
         is_empty = true;
-        return ~zero;
+        return ~0;
     }
-
-    //printf("1\n");
 
     while (true){
         size_t h = head->fetch_add(1);
         size_t j = h % (2*this->size);
         entry_load_deq:
         Entry ent = entries[j]->load();
-        //std::cout << "d1FINDEX: " << F_INDEX << std::endl;
         if (ent.cycle == cycle(h)){
-            // TODO: Is this equivalent to ORing with (0, 0, F_INDEX) ?
             Entry current = entries[j]->load();
             Entry or_ent = {current.cycle, current.is_safe, F_INDEX};
             while (!entries[j]->compare_exchange_weak(current, or_ent));
-            //printf("Succ deq\n");
-            //std::cout << "dFINDEX: " << F_INDEX << std::endl;
             return ent.index;
         }
 
         Entry new_entry = {ent.cycle, 0, ent.index};
         if (ent.index == F_INDEX){
             new_entry = {cycle(h), ent.is_safe, F_INDEX};
-            //std::cout << "h cycle: " << cycle(h) << std::endl;
         }
         if (ent.cycle < cycle(h)){
             if (!entries[j]->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_deq;
             }
-            //std::cout << "h cycle: " << cycle(h) << std::endl;
         }
         
         size_t t = tail->load();
         if (t <= h + 1){
-            //std::cout << "head + 1 " << h+1 << ", tail " << t << std::endl;
             catchup(t, h+1);
             this->threshold->fetch_sub(1);
-            *error_code = -1;
-            //std::cout << "Decrement threshold 1: " << tr << std::endl;
-            //printf("2\n");
-            return ~zero;
+            return ~0;
         }
 
         if (this->threshold->fetch_sub(1) <= 0){
-            *error_code = -1;
             is_empty = true;
-            //printf("3\n");
-            return ~zero;
+            return ~0;
         }
     }
 }

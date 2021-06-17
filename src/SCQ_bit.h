@@ -32,7 +32,7 @@ public:
     ~SCQ();                             // Destructor
     SCQ(const SCQ & scq);               // Copy Constructor
     bool enq(uint64_t index);       // Enqueue operation
-    int deq(int * error_code); // Dequeue operation
+    int deq(); // Dequeue operation
     void catchup(size_t t, size_t h);
     int cycle(int x);
     bool is_big_endian();
