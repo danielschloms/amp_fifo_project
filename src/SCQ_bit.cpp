@@ -27,8 +27,10 @@ SCQ::SCQ(int capacity, bool full){
     //std::cout << "Here\n";
     for (size_t i = 0; i < 2*capacity; i++){
         Entry e;
-        e.entr = new std::atomic<uint64_t>(0);
-        e.entr->fetch_or(2*size - 1);
+        e.entr = new std::atomic<uint64_t>(i);
+        if (!full){
+            e.entr->fetch_or(2*size - 1);
+        }
         for (size_t i = 0; i < 16; i++)
         {
             e.pad[i] = i;
@@ -71,6 +73,7 @@ bool SCQ::enq(uint64_t index){
     size_t loop_cnt = 0;
     size_t loop_cnt_2 = 0;
     while (true){
+        printf("enql\n");
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
@@ -124,7 +127,7 @@ int SCQ::deq(){
     while (true){
         size_t h = head->fetch_add(1);
         size_t j = h % (size);
-        
+        //printf("run\n");
         uint64_t ent = entries_lli[j].entr->load();
         entry_load_deq:
         uint64_t ent_cycle = ent | (2*size - 1);

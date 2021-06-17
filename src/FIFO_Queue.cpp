@@ -21,6 +21,7 @@ int FIFO::deq(int *error_code){
 
 bool FIFO::enq(int x){
     int index = fq->deq();
+    //std::cout << index << std::endl;
     if (index == -1) {
         return false;
     }

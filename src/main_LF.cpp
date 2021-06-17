@@ -51,18 +51,28 @@ int main(int argc, char **argv){
     size_t *ctr_succ = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
     size_t *ctr_unsucc = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
 
-    size_t q_elements = 4096;
+    size_t q_elements = 16;
 
     num_threads = omp_get_max_threads();
     
     FIFO q(q_elements);
+
+    for (int i = 0; i<q_elements; i++){
+        q.enq(i);
+        std::cout << "Enqueued: " << i << std::endl;
+    }
+
+    for (int i = 0; i<q_elements; i++){
+        int ec = 1;
+        std::cout << "Dequeued: " << q.deq(&ec) << " Error Code: " << ec << std::endl;
+    }
 
     //q.enq(100);
     //int ec;
     //q.deq(&ec);
     //std::cout << q.enq(100) << std::endl;
 
-    
+    /*
     #pragma omp parallel num_threads(num_enq + num_deq + 1)
     {
         int id = omp_get_thread_num();
@@ -112,6 +122,6 @@ int main(int argc, char **argv){
         //Benchmark format: Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
         //std::cout << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
     }
-    
+    */
     return 0;
 }
