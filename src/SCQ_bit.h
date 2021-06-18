@@ -19,13 +19,14 @@ struct Entry{
 class SCQ{
 private:
     size_t size;
-    bool run = true;
     uint64_t F_INDEX;
     std::atomic<int> * threshold;
     std::atomic<size_t> * head;
     std::atomic<size_t> * tail;
     //std::vector<std::atomic<Entry>*> entries;
     std::vector<Entry> entries_lli;
+    bool after = false;
+    bool run = true;
 
 public:
     SCQ(int capacity, bool full);                  // Constructor
@@ -39,7 +40,9 @@ public:
     void print_entry(int j);
     bool entry_empty(int j);
     bool is_empty;
-    void kill();
+    void refresh();
+    void terminate();
+    void check_entries();
 };
 
 #endif //SCQ_BIT_H

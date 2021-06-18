@@ -15,7 +15,7 @@ SCQ::SCQ(int capacity, bool full){
     size = capacity;
     if (full){
         this->threshold->store(3*capacity-1);
-        this->head->store(0);
+        this->head->store(0*capacity);
         this->tail->store(2*capacity);
     }
     else{
@@ -25,12 +25,12 @@ SCQ::SCQ(int capacity, bool full){
     }
     for (size_t i = 0; i < 2*capacity; i++){
         Entry e;
-        e.entr = new std::atomic<uint64_t>(i);
+        e.entr = new std::atomic<uint64_t>(i % capacity);
         if (!full){
             e.entr->fetch_or(2*size - 1);
         }
         else{
-            e.entr->fetch_or(2*size >> 1);
+            //e.entr->fetch_or(2*size >> 1);
         }
         entries_lli.push_back(e);
     }
@@ -50,8 +50,27 @@ void SCQ::catchup(size_t t, size_t h){
     }
 }
 
-void SCQ::kill(){
+void SCQ::check_entries(){
+    F_INDEX = 2*size - 1;
+
+    std::cout << "Head: " << head->load() << ", Tail: " << tail->load() << std::endl;
+
+    for (size_t i = 0 ; i<2*size; i++){
+        uint64_t ent = entries_lli[i].entr->load();
+        int index = ent & (size - 1);
+        int full_index = ent & (2*size - 1);
+        bool empty = full_index == F_INDEX ? true : false;
+        std::cout << "Entry " << i << ", is empty? " << (empty ? "true" : "false") << ", index " << index << ", cycle " << (ent | (2*size - 1)) << std::endl;
+    }
+}
+
+void SCQ::terminate(){
     run = false;
+}
+
+void SCQ::refresh(){
+    threshold->store(3*size-1);
+    after = true;
 }
 
 int SCQ::cycle(int x){
@@ -70,10 +89,12 @@ bool SCQ::enq(uint64_t index){
         // j = cache_remap(T % (2*n))
         size_t j = t % (2*size);
 
-        entry_load_enq:
-        // Pseudocode in the paper uses goto, so I do as well
+        
         uint64_t ent = entries_lli[j].entr->load();
         
+        entry_load_enq:
+        // Pseudocode in the paper uses goto, so I do as well
+
         uint64_t ent_cycle = ent | (2*size - 1);
         uint64_t t_cycle = (t << 1) | (2*size - 1);
 
@@ -98,6 +119,7 @@ int SCQ::deq(){
     F_INDEX = 2*size-1;
     if (threshold->load() < 0){
         is_empty = true;
+        //if (after) printf("fastpath\n");
         return -1;
     }
 
@@ -108,19 +130,22 @@ int SCQ::deq(){
         entry_load_deq:
         uint64_t ent = entries_lli[j].entr->load();
         uint64_t ent_cycle = ent | (2*size - 1);
-
         uint64_t h_cycle = (h << 1) | (2*size - 1);
 
         if (ent_cycle == h_cycle){
             uint64_t current = entries_lli[j].entr->load();
             entries_lli[j].entr->fetch_or(size - 1);
+            if (ent | F_INDEX == ent){
+                //printf("ERROR\n");
+            }
             return ent & (size - 1);
         }
 
         uint64_t new_ent = ent & (~size);
 
-        if (ent | F_INDEX == ent){
+        if ((ent | size) == ent_cycle){
             new_ent = h_cycle | (ent & size);
+            //new_ent = h_cycle ^ ((~ent) & size);
         }
 
         if (ent_cycle < h_cycle){
@@ -133,11 +158,17 @@ int SCQ::deq(){
         if (t <= h + 1){
             catchup(t, h+1);
             threshold->fetch_sub(1);
+            if (after) {
+                //printf("fail1\n");
+                //std::cout << "t: " << t << ", h+1: " << h+1 << ", j: " << j << std::endl;
+                //std::cout << "FINDEX: " << F_INDEX << std::endl;
+            }
             return -1;
         }
 
         if (threshold->fetch_sub(1) <= 0){
             is_empty = true;
+            //if (after) printf("fail2\n");
             return -1;
         }
     }

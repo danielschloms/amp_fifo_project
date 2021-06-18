@@ -6,26 +6,62 @@ FIFO_SCQ::FIFO_SCQ(int capacity){
     data = (int*)malloc(capacity*sizeof(int));
     aq = new SCQ(capacity, false);
     fq = new SCQ(capacity, true);
+    
+    for (int i = 0; i<32; i++){
+        num_thread[i].store(0);
+    }
+}
+
+void FIFO_SCQ::check_entries(bool caq){
+    if (caq){
+        aq->check_entries();
+    }
+    else{
+        fq->check_entries();
+    }
+}
+
+void FIFO_SCQ::refresh(){
+    aq->refresh();
+    fq->refresh();
+    after = true;
+}
+
+void FIFO_SCQ::terminate(){
+    run = false;
+    fq->terminate();
+    aq->terminate();
 }
 
 int FIFO_SCQ::deq(int *error_code){
+    if (!(run || after)){
+        *error_code = -1;
+        return 0;
+    }
     int index = aq->deq();
+    if (index != -1 && index != size-1){
+        //std::cout << "deq idx: " << index << std::endl;
+    }
     if (index == -1) {
         *error_code = -1;
         return 0;
     }
     int val = data[index];
     fq->enq(index);
+    num_thread[val].fetch_sub(1);
     return val;
 }
 
 bool FIFO_SCQ::enq(int x){
+    if (!(run || after)){
+        return false;
+    }
     int index = fq->deq();
-    //std::cout << index << std::endl;
     if (index == -1) {
         return false;
     }
     data[index] = x;
     aq->enq(index);
+    num_thread[x].fetch_add(1);
     return true;
 }
