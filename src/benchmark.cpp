@@ -6,12 +6,9 @@
 #include <math.h> 
 #include "LockQueue.h"
 #include "DoubleLockQueue.h"
-#include "SCQ.h"
-#include "NCQ.h"
+#include "FIFO_Queue.h"
+#include "FIFO_NCQ_Queue.h"
 #include "benchmark.h"
-#include "Queue.h"
-
-#include "main.h"
 
 std::atomic<size_t> enq_succ_count(0);
 std::atomic<size_t> enq_unsucc_count(0);
@@ -26,19 +23,6 @@ void test_enqueue(Queue * q, int id, int enq_cnt){
 
     for (int i = 0; i < enq_cnt; i++){
         bool success = q->enq((i + 1) * id);
-        /*
-        if (success){
-            enq_succ_count.fetch_add(1);
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully enqueued " << (i + 1) * id << std::endl;
-            }        
-        }
-        else{
-            enq_unsucc_count.fetch_add(1);
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
-            }        
-        }*/
     }
 }
 
@@ -66,41 +50,6 @@ void test_dequeue(Queue * q, int id, int deq_cnt){
     }
 }
 
-void test_queue(Queue * q, int id, int elements){
-    // Thread ID
-    // std::thread::id my_id = std::this_thread::get_id();
-    // Don't use actual thread ID, just use the thread's index
-    int my_id = id;
-
-    for (int i = 0; i < elements; i ++){
-        bool success = q->enq(i);
-        if (success){
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully enqueued " << i << std::endl;
-            }        
-        }
-        else{
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue full, didn't enqueue " << i << std::endl;
-            }        
-        }
-    }
-
-    for (int i = 0; i < elements; i ++){
-        int error_code;
-        int ret = q->deq(&error_code);
-        if (ret < 0){
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
-            }        
-        }
-        else{
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
-            }    
-        }
-    }
-}
 
 int main(int argc, char **argv){
     
@@ -114,18 +63,20 @@ int main(int argc, char **argv){
    
     int q_type = Q_TYPE; //defined in benchmark.h
 
-    if(USE_OPENMP){
-        num_threads = omp_get_max_threads();
-    }
+
+    num_threads = omp_get_max_threads();
     
-    //LockQueue q = LockQueue(8);
+
     LockQueue lq(q_elements);
     DoubleLockQueue dlq(q_elements);
-    //SCQ scq(q_elements);
-    //NCQ ncq(q_elements, false);
+    FIFO scq(q_elements);
+    FIFO_NCQ ncq(q_elements);
+
 
     Queue * q;
-
+    if (argc > 1){
+        q_type = atoi(argv[1]);
+    }
 
     if (q_type == LOCK_QUEUE){
         q = &lq;
@@ -133,48 +84,44 @@ int main(int argc, char **argv){
     else if(q_type == DOUBLE_LOCK_QUEUE){
         q = &dlq;
     }
-     /*
-    if(!BENCHMARK){//
-        std::string queue;
-        switch (q_type)
-        {
-            case 0:
-                queue =  "Lock ";
-                break;
-            case 1:
-                queue = "SCQ ";
-                break;
-            case 2: 
-                queue = "NCQ ";
-                break;
-            default:
-                break;
-        }
-        std::cout << "Created " << queue << "Queue\n";
-    }   
     
-    std::vector<std::thread> threads;
-    */
     // Start time measurement
     auto start = std::chrono::system_clock::now();
 
-    /*#pragma omp parallel
-    {
-        int id = omp_get_thread_num();
-        //Dequeue count per thread. If not divisible, then last thread is responsible for remaining dequeues
-        auto enq_cnt_thread = id == num_threads - 1 ? enq_cnt/num_threads + enq_cnt % num_threads : enq_cnt/num_threads; 
-        test_enqueue(q, id, enq_cnt_thread);
-    }*/
 
     auto time_enq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
-
+    
     // Start time measurement
     start = std::chrono::system_clock::now();
-    #pragma omp parallel 
-    {
-        int id = omp_get_thread_num();
-        auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
-        test_dequeue(q, id, deq_cnt_thread);
+    if(q_type == LOCK_QUEUE || q_type == DOUBLE_LOCK_QUEUE){
+        #pragma omp parallel 
+        {
+            int id = omp_get_thread_num();
+            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+            test_dequeue(q, id, deq_cnt_thread);
+        }
+    }
+    else if(q_type == SCQ){
+        #pragma omp parallel
+        {
+            int id = omp_get_thread_num();
+            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+            for (int i = 0; i < deq_cnt; i ++){
+                int error_code;
+                scq.deq(&error_code);
+            }
+        }
+    }
+    else if(q_type == NCQ){
+         #pragma omp parallel
+        {
+            int id = omp_get_thread_num();
+            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+            for (int i = 0; i < deq_cnt; i ++){
+                int error_code;
+                ncq.deq(&error_code);
+            }
+        }
     }
     // End timer
     auto time_deq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
