@@ -39,7 +39,7 @@ private:
 
 public:
     NCQ(int capacity);                  // Constructor
-    NCQ(int capacity, bool empty);                  // Constructor
+    NCQ(int capacity, bool full);                  // Constructor
     ~NCQ();                             // Destructor
     NCQ(const NCQ & ncq);               // Copy Constructor
     bool enq(int index) override;       // Enqueue operation

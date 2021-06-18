@@ -19,10 +19,10 @@ NCQ::NCQ(int capacity) :
     std::cout << "Capacity: " << capacity << std::endl;
 }
 
-NCQ::NCQ(int capacity, bool empty) : 
+NCQ::NCQ(int capacity, bool full) : 
     size(capacity)
 {   
-    if(!empty){
+    if(full){
         head = new std::atomic<size_t>(capacity);
         tail = new std::atomic<size_t>(capacity);
     }
@@ -32,12 +32,11 @@ NCQ::NCQ(int capacity, bool empty) :
     }
     Entry_NCQ init_entry = {0, 0};
     for (size_t i = 0; i < capacity; i++){
-        if(!empty){
+        if(full){
             init_entry = {0, i};
         }
         entries.push_back(new std::atomic<Entry_NCQ>(init_entry));
     }
-    std::cout << "Capacity: " << capacity << std::endl;
 }
 
 NCQ::~NCQ(){};
@@ -67,9 +66,6 @@ bool NCQ::enq(int index){
     Entry_NCQ new_entry;
     
     //std::cout << "Tail: " << tail->load() << " Head: " << head->load() << " Size: " << this->size << std::endl;
-    if(tail->load() - head->load() == this->size){
-        return false;
-    }
     do
     {
         retry:;
