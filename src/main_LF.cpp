@@ -4,6 +4,7 @@
 #include <chrono>
 #include <omp.h>
 #include "FIFO_Queue.h"
+#include "FIFO_NCQ_Queue.h"
 #include "main_LF.h"
 
 bool terminate_enq = false;
@@ -55,6 +56,7 @@ int main(int argc, char **argv){
 
     num_threads = omp_get_max_threads();
     
+    //Can use NCQ now too
     FIFO q(q_elements);
 
     for (int i = 0; i<q_elements; i++){
