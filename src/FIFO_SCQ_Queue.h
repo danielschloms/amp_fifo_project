@@ -1,10 +1,10 @@
-#ifndef FIFO_QUEUE_H
-#define FIFO_QUEUE_H
+#ifndef FIFO_SCQ_QUEUE_H
+#define FIFO_SCQ_QUEUE_H
 
 // Frontend for the SCQ
 #include "SCQ_bit.h"
 
-class FIFO{
+class FIFO_SCQ{
     
 private:
     SCQ *aq;
@@ -15,7 +15,7 @@ private:
 public:
     bool enq(int data);
     int deq(int *error_code);
-    FIFO(int capacity);
+    FIFO_SCQ(int capacity);
 };
 
-#endif //FIFO_QUEUE_H
+#endif //FIFO_SCQ_QUEUE_H

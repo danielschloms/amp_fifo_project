@@ -3,14 +3,15 @@
 #include <vector>
 #include <chrono>
 #include <omp.h>
-#include "FIFO_Queue.h"
+#include "FIFO_SCQ_Queue.h"
+#include "FIFO_NCQ_Queue.h"
 #include "main_LF.h"
 
 bool terminate_enq = false;
 bool terminate_deq = false;
 std::atomic<size_t> finished_enqueuers(0);
 
-void enq_loop(FIFO * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
+void enq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
 
     while (!terminate_enq){
         bool success = q->enq(id);
@@ -23,7 +24,7 @@ void enq_loop(FIFO * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cac
     }
 }
 
-void deq_loop(FIFO * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
+void deq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
     int my_id = id;
     while (!terminate_deq){
         int error_code = 1;
@@ -55,7 +56,8 @@ int main(int argc, char **argv){
 
     num_threads = omp_get_max_threads();
     
-    FIFO q(q_elements);
+    //Can use NCQ now too
+    FIFO_SCQ q(q_elements);
 
     for (int i = 0; i<q_elements; i++){
         q.enq(i);

@@ -4,10 +4,13 @@ LDFLAGS = -latomic
 SRC_DIR = src/
 TARGET_DIR = bin/
 
-all: Free Lock
+all: Free Lock Benchmark
 	rm -f *.o
 
-Free: SCQ_bit.o FIFO_Queue.o main_LF.o
+Benchmark: LockQueue.o DoubleLockQueue.o SCQ_bit.o NCQ.o FIFO_SCQ_Queue.o FIFO_NCQ_Queue.o benchmark.o
+	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
+
+Free: SCQ_bit.o NCQ.o FIFO_SCQ_Queue.o FIFO_NCQ_Queue.o main_LF.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
 Lock: LockQueue.o main_Lock.o
