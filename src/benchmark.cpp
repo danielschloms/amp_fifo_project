@@ -35,18 +35,6 @@ void test_dequeue(Queue * q, int id, int deq_cnt){
     for (int i = 0; i < deq_cnt; i ++){
         int error_code;
         int ret = q->deq(&error_code);
-        /*if (error_code < 0){
-            deq_unsucc_count.fetch_add(1);
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Queue empty, nothing dequeued" << std::endl;
-            }        
-        }
-        else{
-            deq_succ_count.fetch_add(1);
-            if(!BENCHMARK){
-                std::cout << "Thread " << my_id << ": Successfully dequeued " << ret << std::endl;
-            }        
-        }*/
     }
 }
 
@@ -57,8 +45,18 @@ int main(int argc, char **argv){
      * Usage: program_name [Queue Type [Num. of threads]]
      */
     int num_threads = 1;//DEFAULT_THREADS;
+    int total_cnt = 10000000;
     int enq_cnt = 0;   //Enq_cnt
-    int deq_cnt = 10000000;   //Deq_cnt
+    int deq_cnt = 0;   //Deq_cnt
+    if(BENCHMARK_TYPE == EMPTY_DEQ){
+        deq_cnt = total_cnt;
+    }
+    else if(BENCHMARK_TYPE == PAIRS){
+        enq_cnt = total_cnt / 2;
+        deq_cnt = total_cnt / 2 + total_cnt % 2;
+    }  
+
+
     size_t q_elements = pow(2,16); //As described in the paper
    
     int q_type = Q_TYPE; //defined in benchmark.h
@@ -97,29 +95,59 @@ int main(int argc, char **argv){
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
-            test_dequeue(q, id, deq_cnt_thread);
+            if(BENCHMARK_TYPE == EMPTY_DEQ){
+                auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+                test_dequeue(q, id, deq_cnt_thread);
+            }
+            else if(BENCHMARK_TYPE == PAIRS){
+                auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                int error_code = 0;
+                for(int i = 0; i < total_cnt_thread/2; i++){
+                    q->enq(i);
+                    q->deq(&error_code);
+                }
+            }
         }
     }
     else if(q_type == SCQ){
         #pragma omp parallel
-        {
+        {   
             int id = omp_get_thread_num();
-            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
-            for (int i = 0; i < deq_cnt; i ++){
-                int error_code;
-                scq.deq(&error_code);
+            if(BENCHMARK_TYPE == EMPTY_DEQ){
+                auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+                for (int i = 0; i < deq_cnt_thread; i ++){
+                    int error_code;
+                    scq.deq(&error_code);
+                }
+            }
+            else if(BENCHMARK_TYPE == PAIRS){
+                auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                for (int i = 0; i < total_cnt_thread/2; i++){
+                    int error_code;
+                    scq.enq(id);
+                    scq.deq(&error_code);
+                }
             }
         }
     }
     else if(q_type == NCQ){
-         #pragma omp parallel
-        {
+        #pragma omp parallel
+        {   
             int id = omp_get_thread_num();
-            auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
-            for (int i = 0; i < deq_cnt; i ++){
-                int error_code;
-                ncq.deq(&error_code);
+            if(BENCHMARK_TYPE == EMPTY_DEQ){
+                auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
+                for (int i = 0; i < deq_cnt_thread; i ++){
+                    int error_code;
+                    ncq.deq(&error_code);
+                }
+            }
+            else if(BENCHMARK_TYPE == PAIRS){
+                auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                for (int i = 0; i < total_cnt_thread/2; i++){
+                    int error_code;
+                    ncq.enq(id);
+                    ncq.deq(&error_code);
+                }
             }
         }
     }
