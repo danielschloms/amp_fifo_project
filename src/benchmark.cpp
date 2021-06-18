@@ -6,7 +6,7 @@
 #include <math.h> 
 #include "LockQueue.h"
 #include "DoubleLockQueue.h"
-#include "FIFO_Queue.h"
+#include "FIFO_SCQ_Queue.h"
 #include "FIFO_NCQ_Queue.h"
 #include "benchmark.h"
 
@@ -69,7 +69,7 @@ int main(int argc, char **argv){
 
     LockQueue lq(q_elements);
     DoubleLockQueue dlq(q_elements);
-    FIFO scq(q_elements);
+    FIFO_SCQ scq(q_elements);
     FIFO_NCQ ncq(q_elements);
 
 
