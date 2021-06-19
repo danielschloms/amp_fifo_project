@@ -45,21 +45,15 @@ int main(int argc, char **argv){
      * Usage: program_name [Queue Type [Num. of threads]]
      */
     int num_threads = 1;//DEFAULT_THREADS;
-    int total_cnt = 10000000;
+    int total_cnt = 1000000;
     int enq_cnt = 0;   //Enq_cnt
     int deq_cnt = 0;   //Deq_cnt
-    if(BENCHMARK_TYPE == EMPTY_DEQ){
-        deq_cnt = total_cnt;
-    }
-    else if(BENCHMARK_TYPE == PAIRS){
-        enq_cnt = total_cnt / 2;
-        deq_cnt = total_cnt / 2 + total_cnt % 2;
-    }  
-
+    
 
     size_t q_elements = pow(2,16); //As described in the paper
    
     int q_type = Q_TYPE; //defined in benchmark.h
+    int b_type = BENCHMARK_TYPE; 
 
 
     num_threads = omp_get_max_threads();
@@ -75,6 +69,20 @@ int main(int argc, char **argv){
     if (argc > 1){
         q_type = atoi(argv[1]);
     }
+    if (argc > 2){
+        b_type = atoi(argv[2]);
+    }
+
+    #pragma omp single
+    {
+        if(b_type == EMPTY_DEQ){
+            deq_cnt = total_cnt;
+        }
+        else if(b_type == PAIRS || b_type == RANDOM_OP){
+            enq_cnt = total_cnt / 2;
+            deq_cnt = total_cnt / 2 + total_cnt % 2;
+        }  
+    }
 
     if (q_type == LOCK_QUEUE){
         q = &lq;
@@ -83,28 +91,37 @@ int main(int argc, char **argv){
         q = &dlq;
     }
     
+
     // Start time measurement
     auto start = std::chrono::system_clock::now();
-
-
-    auto time_enq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
-    
-    // Start time measurement
-    start = std::chrono::system_clock::now();
     if(q_type == LOCK_QUEUE || q_type == DOUBLE_LOCK_QUEUE){
         #pragma omp parallel 
         {
             int id = omp_get_thread_num();
-            if(BENCHMARK_TYPE == EMPTY_DEQ){
+            if(b_type == EMPTY_DEQ){
                 auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
                 test_dequeue(q, id, deq_cnt_thread);
             }
-            else if(BENCHMARK_TYPE == PAIRS){
+            else if(b_type == PAIRS){
                 auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
                 int error_code = 0;
                 for(int i = 0; i < total_cnt_thread/2; i++){
                     q->enq(i);
                     q->deq(&error_code);
+                }
+            }
+            else if(b_type == RANDOM_OP){
+                auto total_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                for (int i = 0; i < total_cnt_thread; i++){
+                    int error_code;
+                    int r = rand()%2;
+                    if(r == 0){
+                        q->enq(id);
+                    }
+                    else{
+                        q->deq(&error_code);
+                    }
+                    
                 }
             }
         }
@@ -113,19 +130,33 @@ int main(int argc, char **argv){
         #pragma omp parallel
         {   
             int id = omp_get_thread_num();
-            if(BENCHMARK_TYPE == EMPTY_DEQ){
+            if(b_type == EMPTY_DEQ){
                 auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
                 for (int i = 0; i < deq_cnt_thread; i ++){
                     int error_code;
                     scq.deq(&error_code);
                 }
             }
-            else if(BENCHMARK_TYPE == PAIRS){
+            else if(b_type == PAIRS){
                 auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
                 for (int i = 0; i < total_cnt_thread/2; i++){
                     int error_code;
                     scq.enq(id);
                     scq.deq(&error_code);
+                }
+            }
+            if(b_type == RANDOM_OP){
+                auto total_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                for (int i = 0; i < total_cnt_thread; i++){
+                    int error_code;
+                    int r = rand()%2;
+                    if(r == 0){
+                        scq.enq(id);
+                    }
+                    else{
+                        scq.deq(&error_code);
+                    }
+                    
                 }
             }
         }
@@ -134,14 +165,14 @@ int main(int argc, char **argv){
         #pragma omp parallel
         {   
             int id = omp_get_thread_num();
-            if(BENCHMARK_TYPE == EMPTY_DEQ){
+            if(b_type == EMPTY_DEQ){
                 auto deq_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + deq_cnt % num_threads : deq_cnt/num_threads; 
                 for (int i = 0; i < deq_cnt_thread; i ++){
                     int error_code;
                     ncq.deq(&error_code);
                 }
             }
-            else if(BENCHMARK_TYPE == PAIRS){
+            else if(b_type == PAIRS){
                 auto total_cnt_thread = id == num_threads - 1 ? total_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
                 for (int i = 0; i < total_cnt_thread/2; i++){
                     int error_code;
@@ -149,17 +180,37 @@ int main(int argc, char **argv){
                     ncq.deq(&error_code);
                 }
             }
+            if(b_type == RANDOM_OP){
+                auto total_cnt_thread = id == num_threads - 1 ? deq_cnt/num_threads + total_cnt % num_threads : total_cnt/num_threads; 
+                for (int i = 0; i < total_cnt_thread; i++){
+                    int error_code;
+                    int r = rand()%2;
+                    if(r == 0){
+                        ncq.enq(id);
+                    }
+                    else{
+                        ncq.deq(&error_code);
+                    }
+                    
+                }
+            }
         }
     }
     // End timer
-    auto time_deq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
+    auto time_total = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now()-start).count();
 
 
    
     
     //Print in csv format
-    //Benchmark format: Q_type;Num_threads;Enq_cnt;Deq_cnt;Enq_time[ms];Deq_time[ms]
-    std::cout << q_type << ";" << num_threads << ";" << enq_cnt << ";" << deq_cnt << ";" << time_enq << ";" << time_deq << ";" << std::endl;
+    //Benchmark format: Q_type;Num_threads;Enq_cnt;Deq_cnt;;Total_time[ms]
+    if(b_type != THROUGHPUT){
+        std::cout << q_type << ";" << num_threads << ";" << enq_cnt << ";" << deq_cnt <<  ";" << time_total << ";" << std::endl;
+    }
+    else{
+
+    }
+    
     
     
 

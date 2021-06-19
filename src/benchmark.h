@@ -5,4 +5,6 @@
 #define Q_TYPE SCQ
 #define EMPTY_DEQ 1
 #define PAIRS 2
+#define RANDOM_OP 3
+#define THROUGHPUT 4
 #define BENCHMARK_TYPE PAIRS
