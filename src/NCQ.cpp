@@ -23,12 +23,12 @@ NCQ::NCQ(int capacity, bool full) :
     size(capacity)
 {   
     if(full){
-        head = new std::atomic<size_t>(capacity);
-        tail = new std::atomic<size_t>(capacity);
+        this->head = new std::atomic<size_t>(0);
+        this->tail = new std::atomic<size_t>(capacity);
     }
     else{
-        head = new std::atomic<size_t>(0);
-        tail = new std::atomic<size_t>(capacity);
+        this->head = new std::atomic<size_t>(capacity);
+        this->tail = new std::atomic<size_t>(capacity);
     }
     Entry_NCQ init_entry = {0, 0};
     for (size_t i = 0; i < capacity; i++){
@@ -57,6 +57,15 @@ void NCQ::kill(){
 
 int NCQ::cycle(int x){
     return (x / (this->size));
+}
+
+//Only for debugging reasons
+int NCQ::getHead(){
+    return head->load();
+}
+//Only for debugging reasons
+int NCQ::getTail(){
+    return tail->load();
 }
 
 bool NCQ::enq(int index){
