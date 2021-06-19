@@ -34,7 +34,7 @@ void FIFO_SCQ::terminate(){
 }
 
 int FIFO_SCQ::deq(int *error_code){
-    int index = aq->deq();
+    int index = aq->deq(error_code);
     if (index == -1) {
         *error_code = -1;
         return 0;
@@ -46,7 +46,8 @@ int FIFO_SCQ::deq(int *error_code){
 }
 
 bool FIFO_SCQ::enq(int x){
-    int index = fq->deq();
+    int error_code;
+    int index = fq->deq(&error_code);
     if (index == -1) {
         return false;
     }
