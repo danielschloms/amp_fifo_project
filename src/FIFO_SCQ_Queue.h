@@ -19,7 +19,7 @@ public:
     bool enq(int data);
     int deq(int *error_code);
     FIFO_SCQ(int capacity);
-    std::atomic<size_t> num_thread[32];
+    std::atomic<int64_t> num_thread[32];
     void refresh();
     void terminate();
     void check_entries(bool caq);

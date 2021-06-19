@@ -11,12 +11,11 @@ SCQ::SCQ(int capacity, bool full){
     this->threshold = (std::atomic<int>*)malloc(sizeof(std::atomic<int>));
     this->head = (std::atomic<size_t>*)malloc(sizeof(std::atomic<size_t>));
     this->tail = (std::atomic<size_t>*)malloc(sizeof(std::atomic<size_t>));
-    F_INDEX = 2*capacity - 1;
     size = capacity;
     if (full){
         this->threshold->store(3*capacity-1);
-        this->head->store(0*capacity);
-        this->tail->store(2*capacity);
+        this->head->store(0);
+        this->tail->store(capacity);
     }
     else{
         this->threshold->store(-1);
@@ -30,7 +29,12 @@ SCQ::SCQ(int capacity, bool full){
             e.entr->fetch_or(2*size - 1);
         }
         else{
-            //e.entr->fetch_or(2*size >> 1);
+            if (i < capacity){
+                //e.entr->fetch_or(size);
+            }
+            else{
+                e.entr->fetch_or(2*size-1);
+            }
         }
         entries_lli.push_back(e);
     }
@@ -60,7 +64,7 @@ void SCQ::check_entries(){
         int index = ent & (size - 1);
         int full_index = ent & (2*size - 1);
         bool empty = full_index == F_INDEX ? true : false;
-        std::cout << "Entry " << i << ", is empty? " << (empty ? "true" : "false") << ", index " << index << ", cycle " << (ent | (2*size - 1)) << std::endl;
+        std::cout << "Entry " << i << ", is empty? " << (empty ? "true" : "false") << ", index " << index << ", cycle " << (ent | (2*size - 1)) << (!empty&&(index==31)?" !!!!!":"") << std::endl;
     }
 }
 
@@ -82,25 +86,24 @@ bool SCQ::entry_empty(int j){
 }
 
 bool SCQ::enq(uint64_t index){
-    index ^= (size - 1);
+    //index ^= (size - 1);
     while (true){
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
         // j = cache_remap(T % (2*n))
         size_t j = t % (2*size);
 
-        
-        uint64_t ent = entries_lli[j].entr->load();
-        
         entry_load_enq:
         // Pseudocode in the paper uses goto, so I do as well
-
+        uint64_t ent = entries_lli[j].entr->load();
         uint64_t ent_cycle = ent | (2*size - 1);
+        //uint64_t ent_findex = ent & (2*size-1);
         uint64_t t_cycle = (t << 1) | (2*size - 1);
 
         if (ent_cycle < t_cycle && 
             (ent == ent_cycle && (ent == ent_cycle || (ent == ent_cycle ^ size) && head->load() <= t))){
-            uint64_t new_entry = t_cycle ^ index; 
+            //uint64_t new_entry = t_cycle ^ index; 
+            uint64_t new_entry = (t_cycle & ~(size-1)) | index;
             if (!entries_lli[j].entr->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_enq;
             }
@@ -108,7 +111,10 @@ bool SCQ::enq(uint64_t index){
             if (threshold->load() != (3*size) - 1){
                 threshold->store((3*size) - 1);
             }
-            
+            /*
+            if (index == 31 && head->load() >= t){
+                printf("bruh\n");
+            }*/
             return true;
         }
     }
@@ -116,10 +122,7 @@ bool SCQ::enq(uint64_t index){
 
 int SCQ::deq(){
     // Checks if queue is empty
-    F_INDEX = 2*size-1;
     if (threshold->load() < 0){
-        is_empty = true;
-        //if (after) printf("fastpath\n");
         return -1;
     }
 
@@ -135,17 +138,16 @@ int SCQ::deq(){
         if (ent_cycle == h_cycle){
             uint64_t current = entries_lli[j].entr->load();
             entries_lli[j].entr->fetch_or(size - 1);
-            if (ent | F_INDEX == ent){
-                //printf("ERROR\n");
-            }
             return ent & (size - 1);
         }
 
-        uint64_t new_ent = ent & (~size);
+        uint64_t new_ent = ent & ~size;
 
+        /*if (ent & (2*size-1) == 2*size-1){
+            new_ent = h_cycle | (ent & size);
+        }*/
         if ((ent | size) == ent_cycle){
             new_ent = h_cycle | (ent & size);
-            //new_ent = h_cycle ^ ((~ent) & size);
         }
 
         if (ent_cycle < h_cycle){
@@ -158,17 +160,10 @@ int SCQ::deq(){
         if (t <= h + 1){
             catchup(t, h+1);
             threshold->fetch_sub(1);
-            if (after) {
-                //printf("fail1\n");
-                //std::cout << "t: " << t << ", h+1: " << h+1 << ", j: " << j << std::endl;
-                //std::cout << "FINDEX: " << F_INDEX << std::endl;
-            }
             return -1;
         }
 
         if (threshold->fetch_sub(1) <= 0){
-            is_empty = true;
-            //if (after) printf("fail2\n");
             return -1;
         }
     }

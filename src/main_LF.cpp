@@ -62,24 +62,18 @@ int main(int argc, char **argv){
     
     //Can use NCQ now too
     FIFO_SCQ q(q_elements);
-    while(false){
+    if(false){
     //for (int j = 0; j < 5; j++){
-    for (int i = 0; i<q_elements; i++){
-        q.enq(i);
-        std::cout << "Enqueued: " << i << std::endl;
-    }
+        for (int i = 0; i<2*q_elements; i++){
+            bool s = q.enq(i);
+            std::cout << (s?"Successfully ":"Unsuccessfully ") << "Enqueued: " << i << std::endl;
+        }
 
-    for (int i = 0; i<q_elements; i++){
-        int ec = 1;
-        std::cout << "Dequeued: " << q.deq(&ec) << " Error Code: " << ec << std::endl;
+        for (int i = 0; i<2*q_elements; i++){
+            int ec = 1;
+            std::cout << "Dequeued: " << q.deq(&ec) << " Error Code: " << ec << std::endl;
+        }
     }
-    }
-    //q.enq(100);
-    //int ec;
-    //q.deq(&ec);
-    //std::cout << q.enq(100) << std::endl;
-
-    //exit(1);
     
     #pragma omp parallel num_threads(num_enq + num_deq + 1)
     {
@@ -106,7 +100,10 @@ int main(int argc, char **argv){
 
             std::this_thread::sleep_for(std::chrono::seconds(time));
             terminate_enq = true;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             terminate_deq = true;
+            
+            
         }
     }
 
@@ -117,10 +114,12 @@ int main(int argc, char **argv){
     size_t leftover = 0;
 
     // Make sure all elements are dequeued
+    bool leave = false;
     bool err = false;
     //while (!leave){
     for (int i = 0; i < 1000*q_elements; i++){
-        q.refresh();
+        //q.refresh();
+        leave = true;
         int ec = 1;
         q.deq(&ec);
         //std::cout << "Dequeued: " << q.deq(&ec) << " Error Code: " << ec << std::endl;
@@ -133,21 +132,26 @@ int main(int argc, char **argv){
 
         if (q.num_thread[i].load() != 0){
             err = true;
-            std::cout << "Error element " << i << std::endl;
+            std::cout << "Error element " << i << " val: " << q.num_thread[i].load() << std::endl;
         }
     }
 
     if (err){
         
-        for (int i = 0; i < 32; i++){
+        /*for (int i = 0; i < 64; i++){
             bool s = q.enq(i);
             std::cout << "Enqueued " << i << (s?" successfully":" unsuccessfully") << std::endl;
-        }
+        }*/
 
         printf("Check aq\n");
         q.check_entries(true);
         printf("Check fq\n");
         q.check_entries(false);
+
+        q.refresh();
+        int ec = 1;
+        int e = q.deq(&ec);
+        std::cout << "Error deq " << e << " with error code " << ec << std::endl;
     }
 
 

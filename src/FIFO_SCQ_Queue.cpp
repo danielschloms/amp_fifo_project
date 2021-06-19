@@ -34,34 +34,24 @@ void FIFO_SCQ::terminate(){
 }
 
 int FIFO_SCQ::deq(int *error_code){
-    if (!(run || after)){
-        *error_code = -1;
-        return 0;
-    }
     int index = aq->deq();
-    if (index != -1 && index != size-1){
-        //std::cout << "deq idx: " << index << std::endl;
-    }
     if (index == -1) {
         *error_code = -1;
         return 0;
     }
     int val = data[index];
-    fq->enq(index);
     num_thread[val].fetch_sub(1);
+    fq->enq(index);
     return val;
 }
 
 bool FIFO_SCQ::enq(int x){
-    if (!(run || after)){
-        return false;
-    }
     int index = fq->deq();
     if (index == -1) {
         return false;
     }
     data[index] = x;
-    aq->enq(index);
     num_thread[x].fetch_add(1);
+    aq->enq(index);
     return true;
 }
