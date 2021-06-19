@@ -1,0 +1,30 @@
+#! /bin/bash
+
+#SBATCH -p q_student
+#SBATCH -N 1                 
+#SBATCH -c 32   # use all 32 cores 
+#SBATCH --cpu-freq=High
+#SBATCH --time=9:55
+#SBATCH --output=SCQ.out
+
+
+
+# modify parameters accordingly
+
+NUM_THREADS=(1 2 4 8 16 24 32 48 64)
+NUM_REP=30
+BINARY="../../bin/./Benchmark"
+len=${#NUM_THREADS[@]}
+size=${#SIZES[@]} 
+
+echo "Q_type;Num_threads;Enq_cnt;Deq_cnt;Total_time[ms]"
+    for (( i=0; i<$len; i++ ));
+    do
+        k=${NUM_THREADS[$i]}
+        export OMP_NUM_THREADS=$k
+       
+        for((j=0;j<$NUM_REP;j++));
+        do
+            ${BINARY} 2 3
+        done
+    done
