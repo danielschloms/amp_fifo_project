@@ -5,6 +5,7 @@
 #include "SCQ_bit.h"
 #include <iostream>
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 
 SCQ::SCQ(int capacity, bool full){
@@ -24,13 +25,13 @@ SCQ::SCQ(int capacity, bool full){
     }
     for (size_t i = 0; i < 2*capacity; i++){
         Entry e;
-        e.entr = new std::atomic<uint64_t>(i % capacity);
+        e.entr = new std::atomic<uint64_t>(i);
         if (!full){
             e.entr->fetch_or(2*size - 1);
         }
         else{
             if (i < capacity){
-                //e.entr->fetch_or(size);
+                
             }
             else{
                 e.entr->fetch_or(2*size-1);
@@ -104,6 +105,10 @@ bool SCQ::enq(uint64_t index){
             (ent == ent_cycle && (ent == ent_cycle || (ent == ent_cycle ^ size) && head->load() <= t))){
             //uint64_t new_entry = t_cycle ^ index; 
             uint64_t new_entry = (t_cycle & ~(size-1)) | index;
+
+            //new_entry &= ~size;
+            //assert((new_entry & size) == 0);
+
             if (!entries_lli[j].entr->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_enq;
             }
@@ -120,9 +125,10 @@ bool SCQ::enq(uint64_t index){
     }
 }
 
-int SCQ::deq(){
+int SCQ::deq(int *ec){
     // Checks if queue is empty
     if (threshold->load() < 0){
+        *ec = -1;
         return -1;
     }
 
@@ -160,10 +166,12 @@ int SCQ::deq(){
         if (t <= h + 1){
             catchup(t, h+1);
             threshold->fetch_sub(1);
+            *ec = -1;
             return -1;
         }
 
         if (threshold->fetch_sub(1) <= 0){
+            *ec = -1;
             return -1;
         }
     }
