@@ -40,7 +40,6 @@ int FIFO_SCQ::deq(int *error_code){
         return 0;
     }
     int val = data[index];
-    num_thread[val].fetch_sub(1);
     fq->enq(index);
     return val;
 }
@@ -52,7 +51,6 @@ bool FIFO_SCQ::enq(int x){
         return false;
     }
     data[index] = x;
-    num_thread[x].fetch_add(1);
     aq->enq(index);
     return true;
 }
