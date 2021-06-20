@@ -31,7 +31,7 @@ NCQ::NCQ(int capacity, bool full) :
         this->tail = new std::atomic<size_t>(capacity);
     }
     Entry_NCQ init_entry = {0, 0};
-    for (size_t i = 0; i < capacity; i++){
+    for (int i = 0; i < capacity; i++){
         if(full){
             init_entry = {0, i};
         }

@@ -14,7 +14,6 @@ bool terminate_deq = false;
 void enq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
 
     while (!terminate_enq){
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         bool success = q->enq(id);
         if (success){
             ctr_succ[id*cache_offset]++;
@@ -26,9 +25,7 @@ void enq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t
 }
 
 void deq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t cache_offset){
-    int my_id = id;
     while (!terminate_deq){
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         int error_code = 1;
         int ret = q->deq(&error_code);
         if (error_code < 0){
@@ -43,9 +40,9 @@ void deq_loop(FIFO_SCQ * q, int id, size_t *ctr_succ, size_t *ctr_unsucc, size_t
 int main(int argc, char **argv){
  
     int num_threads;
-    int time = 3;  // in secs
-    int num_deq = 15;
-    int num_enq = 15;
+    int time = 5;  // in secs
+    int num_deq = 30;
+    int num_enq = 30;
 
     // Cache line size 64 byte
     size_t cache_offset = 64 / sizeof(size_t);
@@ -54,7 +51,7 @@ int main(int argc, char **argv){
     size_t *ctr_succ = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
     size_t *ctr_unsucc = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
 
-    size_t q_elements = 32;
+    size_t q_elements = 65536;
     size_t sq_elements = 128;
 
     num_threads = omp_get_max_threads();

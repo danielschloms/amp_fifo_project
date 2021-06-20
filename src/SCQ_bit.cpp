@@ -132,7 +132,6 @@ int SCQ::deq(int *ec){
         uint64_t h_cycle = (h << 1) | (2*size - 1);
 
         if (ent_cycle == h_cycle){
-            uint64_t current = entries_lli[j].entr->load();
             entries_lli[j].entr->fetch_or(size - 1);
             return ent & (size - 1);
         }
