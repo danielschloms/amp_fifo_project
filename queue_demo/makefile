@@ -1,10 +1,10 @@
 CC = g++
-CFLAGS = -fpie -fopenmp -g --std=c++11 -pthread
+CFLAGS = -fpie -Wall -fopenmp -g --std=c++11 -pthread
 LDFLAGS = -latomic
 SRC_DIR = src/
 TARGET_DIR = bin/
 
-all: Dir Demo LockDemo Benchmark
+all: Dir Demo LockDemo
 	rm -f *.o
 
 Dir:
