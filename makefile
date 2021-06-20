@@ -4,8 +4,12 @@ LDFLAGS = -latomic
 SRC_DIR = src/
 TARGET_DIR = bin/
 
-all: Free Lock Benchmark
+all: Dir Free Lock Benchmark
 	rm -f *.o
+
+Dir:
+	mkdir -p bin
+	export OMP_NUM_THREADS=64
 
 Benchmark: LockQueue.o DoubleLockQueue.o SCQ_bit.o NCQ.o FIFO_SCQ_Queue.o FIFO_NCQ_Queue.o benchmark.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
