@@ -51,17 +51,46 @@ int main(int argc, char **argv){
     size_t *ctr_unsucc = (size_t*)malloc((num_enq+num_deq)*cache_offset*sizeof(size_t));
 
     size_t q_elements = 65536;
+    size_t sq_elements = 128;
 
     num_threads = omp_get_max_threads();
     std::cout << "Max. OMP threads: " << num_threads << std::endl;
     std::cout << "---------------------------------------" << std::endl;
-    std::cout << "For the Locking Queue, the sequential demo is omitted\n";
+    LockQueue sq(sq_elements);
+
+    std::cout << "Sequential enqueue and dequeue of " << 2*sq_elements << " elements\n";
+    std::cout << "Queue size: " << sq_elements << std::endl;
     std::cout << "---------------------------------------" << std::endl;
+    for (int i = 0; i<2*sq_elements; i++){
+        bool s = sq.enq(i);
+        if (s){
+            std::cout << "Enqueued: " << i << std::endl;
+        }
+        else{
+            std::cout << "Did not enqueue: " << i << ", queue full\n";
+        }
+    }
+    std::cout << "---------------------------------------" << std::endl;
+    for (int i = 0; i<2*sq_elements; i++){
+        int ec = 1;
+        int val = sq.deq(&ec);
+        if (ec < 0){
+            std::cout << "Nothing dequeued, queue empty\n";
+        }
+        else{
+            std::cout << "Dequeued: " << val << std::endl;
+        }
+        
+    }
+    std::cout << "---------------------------------------" << std::endl;
+    std::cout << "End sequential test\n";
+    std::cout << "---------------------------------------" << std::endl;
+
     LockQueue q(q_elements);
     std::cout << "Concurrent test: " << num_enq << " enqueuers, " << num_deq << " dequeuers\n";
     std::cout << "Running for " << time << " seconds\n";
     std::cout << "Queue size: " << q_elements << std::endl;
-    std::cout << "---------------------------------------" << std::endl;
+    std::cout << "---------------------------------------\n";
     #pragma omp parallel num_threads(num_enq + num_deq + 1)
     {
         int id = omp_get_thread_num();
@@ -87,7 +116,11 @@ int main(int argc, char **argv){
     std::cout << "Dequeuing left over elements\n";
     std::cout << "---------------------------------------" << std::endl;
     for (size_t i = 0; i < 10*q_elements; i++){
-
+        int error_code = 1;
+        int ret = q.deq(&error_code);
+        if (error_code >= 0){
+            leftover++;
+        }
     }
 
     for(size_t i = 0; i < num_enq; i++){
@@ -103,9 +136,10 @@ int main(int argc, char **argv){
     std::cout << "Queue type: Locking Queue" << std::endl;
     std::cout << "Running time: " << time << " seconds\n";
     std::cout << "Successful enqueues: " << cuml_enq_succ << std::endl;
-    std::cout << "unsuccessful enqueues: " << cuml_enq_unsucc << std::endl;
+    std::cout << "Unsuccessful enqueues: " << cuml_enq_unsucc << std::endl;
     std::cout << "Successful dequeues: " << cuml_deq_succ << std::endl;
     std::cout << "Unsuccessful dequeues: " << cuml_deq_unsucc << std::endl;
+    std::cout << "Elements left in the queue: " << leftover << std::endl;
     std::cout << "-----------------------" << std::endl;
     
     return 0;
