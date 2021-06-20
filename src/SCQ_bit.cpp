@@ -87,7 +87,6 @@ bool SCQ::entry_empty(int j){
 }
 
 bool SCQ::enq(uint64_t index){
-    //index ^= (size - 1);
     while (true){
         size_t t = tail->fetch_add(1); 
         // In the pseudocode, cache_remap is used to reduce false sharing
@@ -98,16 +97,11 @@ bool SCQ::enq(uint64_t index){
         // Pseudocode in the paper uses goto, so I do as well
         uint64_t ent = entries_lli[j].entr->load();
         uint64_t ent_cycle = ent | (2*size - 1);
-        //uint64_t ent_findex = ent & (2*size-1);
         uint64_t t_cycle = (t << 1) | (2*size - 1);
 
         if (ent_cycle < t_cycle && 
             (ent == ent_cycle && (ent == ent_cycle || (ent == ent_cycle ^ size) && head->load() <= t))){
-            //uint64_t new_entry = t_cycle ^ index; 
             uint64_t new_entry = (t_cycle & ~(size-1)) | index;
-
-            //new_entry &= ~size;
-            //assert((new_entry & size) == 0);
 
             if (!entries_lli[j].entr->compare_exchange_weak(ent, new_entry)){
                 goto entry_load_enq;
@@ -116,10 +110,6 @@ bool SCQ::enq(uint64_t index){
             if (threshold->load() != (3*size) - 1){
                 threshold->store((3*size) - 1);
             }
-            /*
-            if (index == 31 && head->load() >= t){
-                printf("bruh\n");
-            }*/
             return true;
         }
     }
@@ -149,9 +139,6 @@ int SCQ::deq(int *ec){
 
         uint64_t new_ent = ent & ~size;
 
-        /*if (ent & (2*size-1) == 2*size-1){
-            new_ent = h_cycle | (ent & size);
-        }*/
         if ((ent | size) == ent_cycle){
             new_ent = h_cycle | (ent & size);
         }

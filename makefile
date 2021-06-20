@@ -16,12 +16,6 @@ Free: SCQ_bit.o NCQ.o FIFO_SCQ_Queue.o FIFO_NCQ_Queue.o main_LF.o
 Lock: LockQueue.o main_Lock.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
-#main_alt: DoubleLockQueue.o LockQueue.o NCQ.o SCQ.o main_alt.o
-#	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
-#
-#main: LockQueue.o NCQ.o SCQ.o main.o
-#	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
-
 %.o: $(SRC_DIR)%.cpp $(SRC_DIR)%.h
 	$(CC) $(CFLAGS) $< -c -o $@
 
