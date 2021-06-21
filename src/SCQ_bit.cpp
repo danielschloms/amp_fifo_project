@@ -83,7 +83,7 @@ int SCQ::cycle(int x){
 }
 
 bool SCQ::entry_empty(int j){
-    return entries_lli[j].entr->load() & F_INDEX == F_INDEX;
+    return (entries_lli[j].entr->load() & F_INDEX) == F_INDEX;
 }
 
 bool SCQ::enq(uint64_t index){
