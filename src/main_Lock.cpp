@@ -54,8 +54,6 @@ int main(int argc, char **argv){
     size_t sq_elements = 128;
 
     num_threads = omp_get_max_threads();
-    std::cout << "Max. OMP threads: " << num_threads << std::endl;
-    std::cout << "---------------------------------------" << std::endl;
     LockQueue sq(sq_elements);
 
     std::cout << "Sequential enqueue and dequeue of " << 2*sq_elements << " elements\n";
@@ -132,7 +130,9 @@ int main(int argc, char **argv){
         cuml_deq_unsucc += ctr_unsucc[i*cache_offset];
     }
 
-    std::cout << "Threads: " << num_deq+num_enq << std::endl;
+    std::cout << "Max. OMP threads: " << num_threads << std::endl;
+    std::cout << "Specified number of enqueuers: " << num_enq << std::endl;
+    std::cout << "Specified number of dequeuers: " << num_enq << std::endl;
     std::cout << "Queue type: Locking Queue" << std::endl;
     std::cout << "Running time: " << time << " seconds\n";
     std::cout << "Successful enqueues: " << cuml_enq_succ << std::endl;
