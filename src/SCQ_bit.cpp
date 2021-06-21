@@ -100,7 +100,8 @@ bool SCQ::enq(uint64_t index){
         uint64_t t_cycle = (t << 1) | (2*size - 1);
 
         if (ent_cycle < t_cycle && 
-            (ent == ent_cycle && (ent == ent_cycle || (ent == ent_cycle ^ size) && head->load() <= t))){
+            (ent == ent_cycle || 
+            ((ent == ent_cycle ^ size) && (head->load() <= t)))){
             uint64_t new_entry = (t_cycle & ~(size-1)) | index;
 
             if (!entries_lli[j].entr->compare_exchange_weak(ent, new_entry)){
